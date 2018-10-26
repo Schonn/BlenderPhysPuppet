@@ -34,44 +34,110 @@ class PHYPUPPuppetPanel(bpy.types.Panel):
     bl_space_type = 'VIEW_3D'
     bl_region_type = 'UI'
     bl_label = 'Physics Puppet'
-    #bl_context = 'posemode'
     bl_context = 'objectmode'
     bl_category = 'Puppet Physics'
 
     def draw(self, context):
-        self.layout.operator('phypup.makeproxy', text ='Create Animation Proxy')
-        self.layout.operator('phypup.makepuppet', text ='Create Armature Puppet')
+        self.layout.operator('phypup.makepuppet', text ='Create Puppet From Armature')
+        
+#panel class for rigid body related items in object mode
+class PHYPUPRigidBodyPanel(bpy.types.Panel):
+    bl_space_type = 'VIEW_3D'
+    bl_region_type = 'UI'
+    bl_label = 'Puppet Rigid Body'
+    bl_context = 'objectmode'
+    bl_category = 'Puppet Physics'
+
+    def draw(self, context):
+        self.layout.operator('phypup.makenarrower', text ='Make Narrower')
+        self.layout.operator('phypup.makewider', text ='Make Wider')
+        self.layout.operator('phypup.showrigidbodies', text ='Show All Rigid Bodies')
+        self.layout.operator('phypup.hiderigidbodies', text ='Hide All Rigid Bodies')
 
         
-class PHYPUPCreateProxy(bpy.types.Operator):
-    bl_idname = "phypup.makeproxy"
-    bl_label = "create physics animation proxy"
-    bl_description = "create a clone of the currently selected physics object to control rotation"
+#class PHYPUPCreateProxy(bpy.types.Operator):
+#    bl_idname = "phypup.makeproxy"
+#    bl_label = "create physics animation proxy"
+#    bl_description = "create a clone of the currently selected physics object to control rotation"
+#    
+#    def execute(self, context):
+#        sceneObjects = bpy.context.scene.objects
+#        physSourceObject = bpy.context.selected_objects[0]
+#        if bpy.context.object.rigid_body is None:
+#            bpy.ops.rigidbody.object_add()
+#        bpy.ops.object.duplicate_move(OBJECT_OT_duplicate={"linked":False, "mode":'TRANSLATION'},TRANSFORM_OT_translate={"value":(3,0,0)})
+#        physHandleObject = bpy.context.selected_objects[0]
+#        physHandleObject.rigid_body.type = 'PASSIVE'
+#        physHandleObject.rigid_body.kinematic = True
+#        bpy.ops.rigidbody.constraint_add()
+#        physHandleObject.rigid_body_constraint.type = 'GENERIC_SPRING'
+#        physHandleObject.rigid_body_constraint.use_spring_ang_x = True
+#        physHandleObject.rigid_body_constraint.use_spring_ang_y = True
+#        physHandleObject.rigid_body_constraint.use_spring_ang_z = True
+#        physHandleObject.rigid_body_constraint.spring_stiffness_ang_x = 100
+#        physHandleObject.rigid_body_constraint.spring_stiffness_ang_y = 100
+#        physHandleObject.rigid_body_constraint.spring_stiffness_ang_z = 100
+#        physHandleObject.rigid_body_constraint.spring_damping_ang_x = 10
+#        physHandleObject.rigid_body_constraint.spring_damping_ang_y = 10
+#        physHandleObject.rigid_body_constraint.spring_damping_ang_z = 10
+#        physHandleObject.rigid_body_constraint.object1 = physSourceObject
+#        physHandleObject.rigid_body_constraint.object2 = physHandleObject
+#        return {'FINISHED'}
+
+#function to hide all rigid body collision objects
+class PHYPUPHidePhys(bpy.types.Operator):
+    bl_idname = "phypup.hiderigidbodies"
+    bl_label = "hide puppet rigid bodies"
+    bl_description = "turn visibility off for all rigid bodies associated with physics puppets"
     
     def execute(self, context):
         sceneObjects = bpy.context.scene.objects
-        physSourceObject = bpy.context.selected_objects[0]
-        if bpy.context.object.rigid_body is None:
-            bpy.ops.rigidbody.object_add()
-        bpy.ops.object.duplicate_move(OBJECT_OT_duplicate={"linked":False, "mode":'TRANSLATION'},TRANSFORM_OT_translate={"value":(3,0,0)})
-        physHandleObject = bpy.context.selected_objects[0]
-        physHandleObject.rigid_body.type = 'PASSIVE'
-        physHandleObject.rigid_body.kinematic = True
-        bpy.ops.rigidbody.constraint_add()
-        physHandleObject.rigid_body_constraint.type = 'GENERIC_SPRING'
-        physHandleObject.rigid_body_constraint.use_spring_ang_x = True
-        physHandleObject.rigid_body_constraint.use_spring_ang_y = True
-        physHandleObject.rigid_body_constraint.use_spring_ang_z = True
-        physHandleObject.rigid_body_constraint.spring_stiffness_ang_x = 100
-        physHandleObject.rigid_body_constraint.spring_stiffness_ang_y = 100
-        physHandleObject.rigid_body_constraint.spring_stiffness_ang_z = 100
-        physHandleObject.rigid_body_constraint.spring_damping_ang_x = 10
-        physHandleObject.rigid_body_constraint.spring_damping_ang_y = 10
-        physHandleObject.rigid_body_constraint.spring_damping_ang_z = 10
-        physHandleObject.rigid_body_constraint.object1 = physSourceObject
-        physHandleObject.rigid_body_constraint.object2 = physHandleObject
+        for potentialPhysObject in sceneObjects:
+            if("PHYPUP_" in potentialPhysObject.name and "_phys" in potentialPhysObject.name):
+                potentialPhysObject.hide_viewport = True
         return {'FINISHED'}
     
+#function to show all rigid body collision objects
+class PHYPUPShowPhys(bpy.types.Operator):
+    bl_idname = "phypup.showrigidbodies"
+    bl_label = "show puppet rigid bodies"
+    bl_description = "turn visibility on for all rigid bodies associated with physics puppets"
+    
+    def execute(self, context):
+        sceneObjects = bpy.context.scene.objects
+        for potentialPhysObject in sceneObjects:
+            if("PHYPUP_" in potentialPhysObject.name and "_phys" in potentialPhysObject.name):
+                potentialPhysObject.hide_viewport = False
+        return {'FINISHED'}
+
+#function to make a physics object thinner 
+class PHYPUPMakeNarrower(bpy.types.Operator):
+    bl_idname = "phypup.makenarrower"
+    bl_label = "make a physics object narrower"
+    bl_description = "edit a physics object to become narrower"
+    
+    def execute(self, context):
+        bpy.ops.object.editmode_toggle()
+        bpy.ops.mesh.select_all(action='SELECT')
+        bpy.context.scene.tool_settings.transform_pivot_point = 'INDIVIDUAL_ORIGINS'
+        bpy.ops.transform.resize(value=(0.8,0.8,0.8),constraint_axis=(True,False,True),constraint_orientation='LOCAL')
+        bpy.ops.object.editmode_toggle()    
+        return {'FINISHED'}
+
+#function to make a physics object thinner 
+class PHYPUPMakeWider(bpy.types.Operator):
+    bl_idname = "phypup.makewider"
+    bl_label = "make a physics object wider"
+    bl_description = "edit a physics object to become wider"
+    
+    def execute(self, context):
+        bpy.ops.object.editmode_toggle()
+        bpy.ops.mesh.select_all(action='SELECT')
+        bpy.context.scene.tool_settings.transform_pivot_point = 'INDIVIDUAL_ORIGINS'
+        bpy.ops.transform.resize(value=(1.25,1.25,1.25),constraint_axis=(True,False,True),constraint_orientation='LOCAL')
+        bpy.ops.object.editmode_toggle()    
+        return {'FINISHED'}
+
 #function to create physics puppet controls for the currently selected armature
 class PHYPUPCreateArmaturePuppet(bpy.types.Operator):
     bl_idname = "phypup.makepuppet"
@@ -89,7 +155,7 @@ class PHYPUPCreateArmaturePuppet(bpy.types.Operator):
             bpy.context.scene.rigidbody_world.solver_iterations = 100
             bpy.context.scene.gravity = [0,0,-100]
             bpy.context.scene.tool_settings.use_keyframe_insert_auto = False
-            #posemode and select all bones, then edit to uncheck connected on all bones
+            #uncomment to force selection of all bones
             bpy.ops.object.posemode_toggle()
             #bpy.ops.pose.select_all(action='SELECT')
             bpy.ops.object.editmode_toggle()
@@ -120,8 +186,8 @@ class PHYPUPCreateArmaturePuppet(bpy.types.Operator):
                 bpy.ops.rigidbody.object_add()
                 bonePhysObject.rigid_body.mass = 2
                 bonePhysObject.rigid_body.mesh_source = 'FINAL'
-                bonePhysObject.rigid_body.linear_damping = 0.04
-                bonePhysObject.rigid_body.angular_damping = 0.1
+                bonePhysObject.rigid_body.linear_damping = 0.7
+                bonePhysObject.rigid_body.angular_damping = 1
                 if(targetBone.parent != None):
                     bpy.ops.rigidbody.constraint_add()
                     bonePhysObject.rigid_body_constraint.type = 'GENERIC_SPRING'
@@ -194,6 +260,7 @@ class PHYPUPCreateArmaturePuppet(bpy.types.Operator):
             bpy.ops.object.select_all(action='DESELECT')
             context.view_layer.objects.active = handleArmature
             handleArmature.location[0] = handleArmature.location[0] + handleOffsetDistance
+            handleArmature.show_in_front = True
             bpy.ops.object.posemode_toggle()
             for targetBone in bpy.context.selected_pose_bones:
                 targetBone.constraints.remove(targetBone.constraints["PHYPUP_FollowPhysics"])
@@ -211,13 +278,21 @@ class PHYPUPCreateArmaturePuppet(bpy.types.Operator):
 #register all classes when addon is loaded
 def register():
     bpy.utils.register_class(PHYPUPPuppetPanel)
-    bpy.utils.register_class(PHYPUPCreateProxy)
     bpy.utils.register_class(PHYPUPCreateArmaturePuppet)
+    bpy.utils.register_class(PHYPUPRigidBodyPanel)
+    bpy.utils.register_class(PHYPUPMakeNarrower)
+    bpy.utils.register_class(PHYPUPMakeWider)
+    bpy.utils.register_class(PHYPUPShowPhys)
+    bpy.utils.register_class(PHYPUPHidePhys)
 #unregister all classes when addon is removed
 def unregister():
     bpy.utils.unregister_class(PHYPUPPuppetPanel)
-    bpy.utils.unregister_class(PHYPUPCreateProxy)
     bpy.utils.unregister_class(PHYPUPCreateArmaturePuppet)
+    bpy.utils.unregister_class(PHYPUPRigidBodyPanel)
+    bpy.utils.unregister_class(PHYPUPMakeNarrower)
+    bpy.utils.unregister_class(PHYPUPMakeWider)
+    bpy.utils.unregister_class(PHYPUPShowPhys)
+    bpy.utils.unregister_class(PHYPUPHidePhys)
 #allow debugging for this addon in the Blender text editor
 if __name__ == '__main__':
     register()
