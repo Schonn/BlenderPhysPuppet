@@ -23,14 +23,14 @@ import mathutils
 bl_info = {
     "name": "Puppet Physics",
     "author": "Pierre",
-    "version": (0, 0, 1),
+    "version": (0, 0, 2),
     "blender": (2, 80, 0),
     "description": "Create proxies for rigid bodies for physics based character animation",
     "category": "Animation"
     }
 
 #panel class for physics puppet menu items in object mode
-class PHYPUPPuppetPanel(bpy.types.Panel):
+class PHYPUP_PT_PuppetPanel(bpy.types.Panel):
     bl_space_type = 'VIEW_3D'
     bl_region_type = 'UI'
     bl_label = 'Physics Puppet'
@@ -41,7 +41,7 @@ class PHYPUPPuppetPanel(bpy.types.Panel):
         self.layout.operator('phypup.makepuppet', text ='Create Puppet From Armature')
         
 #panel class for rigid body related items in object mode
-class PHYPUPRigidBodyPanel(bpy.types.Panel):
+class PHYPUP_PT_RigidBodyPanel(bpy.types.Panel):
     bl_space_type = 'VIEW_3D'
     bl_region_type = 'UI'
     bl_label = 'Puppet Rigid Body'
@@ -51,41 +51,14 @@ class PHYPUPRigidBodyPanel(bpy.types.Panel):
     def draw(self, context):
         self.layout.operator('phypup.makenarrower', text ='Make Narrower')
         self.layout.operator('phypup.makewider', text ='Make Wider')
+        self.layout.operator('phypup.makelinksrigid', text ='Make Links Rigid')
+        self.layout.operator('phypup.makelinksslack', text ='Make Links Slack')
+        self.layout.operator('phypup.makelinksfloppy', text ='Make Links Floppy')
         self.layout.operator('phypup.showrigidbodies', text ='Show All Rigid Bodies')
         self.layout.operator('phypup.hiderigidbodies', text ='Hide All Rigid Bodies')
 
-        
-#class PHYPUPCreateProxy(bpy.types.Operator):
-#    bl_idname = "phypup.makeproxy"
-#    bl_label = "create physics animation proxy"
-#    bl_description = "create a clone of the currently selected physics object to control rotation"
-#    
-#    def execute(self, context):
-#        sceneObjects = bpy.context.scene.objects
-#        physSourceObject = bpy.context.selected_objects[0]
-#        if bpy.context.object.rigid_body is None:
-#            bpy.ops.rigidbody.object_add()
-#        bpy.ops.object.duplicate_move(OBJECT_OT_duplicate={"linked":False, "mode":'TRANSLATION'},TRANSFORM_OT_translate={"value":(3,0,0)})
-#        physHandleObject = bpy.context.selected_objects[0]
-#        physHandleObject.rigid_body.type = 'PASSIVE'
-#        physHandleObject.rigid_body.kinematic = True
-#        bpy.ops.rigidbody.constraint_add()
-#        physHandleObject.rigid_body_constraint.type = 'GENERIC_SPRING'
-#        physHandleObject.rigid_body_constraint.use_spring_ang_x = True
-#        physHandleObject.rigid_body_constraint.use_spring_ang_y = True
-#        physHandleObject.rigid_body_constraint.use_spring_ang_z = True
-#        physHandleObject.rigid_body_constraint.spring_stiffness_ang_x = 100
-#        physHandleObject.rigid_body_constraint.spring_stiffness_ang_y = 100
-#        physHandleObject.rigid_body_constraint.spring_stiffness_ang_z = 100
-#        physHandleObject.rigid_body_constraint.spring_damping_ang_x = 10
-#        physHandleObject.rigid_body_constraint.spring_damping_ang_y = 10
-#        physHandleObject.rigid_body_constraint.spring_damping_ang_z = 10
-#        physHandleObject.rigid_body_constraint.object1 = physSourceObject
-#        physHandleObject.rigid_body_constraint.object2 = physHandleObject
-#        return {'FINISHED'}
-
 #function to hide all rigid body collision objects
-class PHYPUPHidePhys(bpy.types.Operator):
+class PHYPUP_OT_HidePhys(bpy.types.Operator):
     bl_idname = "phypup.hiderigidbodies"
     bl_label = "hide puppet rigid bodies"
     bl_description = "turn visibility off for all rigid bodies associated with physics puppets"
@@ -98,7 +71,7 @@ class PHYPUPHidePhys(bpy.types.Operator):
         return {'FINISHED'}
     
 #function to show all rigid body collision objects
-class PHYPUPShowPhys(bpy.types.Operator):
+class PHYPUP_OT_ShowPhys(bpy.types.Operator):
     bl_idname = "phypup.showrigidbodies"
     bl_label = "show puppet rigid bodies"
     bl_description = "turn visibility on for all rigid bodies associated with physics puppets"
@@ -111,7 +84,7 @@ class PHYPUPShowPhys(bpy.types.Operator):
         return {'FINISHED'}
 
 #function to make a physics object thinner 
-class PHYPUPMakeNarrower(bpy.types.Operator):
+class PHYPUP_OT_MakeNarrower(bpy.types.Operator):
     bl_idname = "phypup.makenarrower"
     bl_label = "make a physics object narrower"
     bl_description = "edit a physics object to become narrower"
@@ -125,7 +98,7 @@ class PHYPUPMakeNarrower(bpy.types.Operator):
         return {'FINISHED'}
 
 #function to make a physics object thinner 
-class PHYPUPMakeWider(bpy.types.Operator):
+class PHYPUP_OT_MakeWider(bpy.types.Operator):
     bl_idname = "phypup.makewider"
     bl_label = "make a physics object wider"
     bl_description = "edit a physics object to become wider"
@@ -137,9 +110,168 @@ class PHYPUPMakeWider(bpy.types.Operator):
         bpy.ops.transform.resize(value=(1.25,1.25,1.25),constraint_axis=(True,False,True),constraint_orientation='LOCAL')
         bpy.ops.object.editmode_toggle()    
         return {'FINISHED'}
+    
+#function to make a physics link rigid
+class PHYPUP_OT_MakeLinksRigid(bpy.types.Operator):
+    bl_idname = "phypup.makelinksrigid"
+    bl_label = "make physics object links rigid"
+    bl_description = "make the links rigid between the selected puppet handles and physics joints (good for head, torso and legs)"
+    
+    def setPhysConstraintValues(self,context,physObject):
+        if(physObject.rigid_body_constraint != None):
+            physObject.rigid_body_constraint.use_spring_ang_x = False
+            physObject.rigid_body_constraint.use_spring_ang_y = False
+            physObject.rigid_body_constraint.use_spring_ang_z = False
+            physObject.rigid_body_constraint.limit_lin_x_lower = 0
+            physObject.rigid_body_constraint.limit_lin_y_lower = 0
+            physObject.rigid_body_constraint.limit_lin_z_lower = 0
+            physObject.rigid_body_constraint.limit_lin_x_upper = 0
+            physObject.rigid_body_constraint.limit_lin_y_upper = 0
+            physObject.rigid_body_constraint.limit_lin_z_upper = 0
+        
+    def setHandleConstraintValues(self,context,handleObject):
+        if(handleObject.rigid_body_constraint != None):
+            handleObject.rigid_body_constraint.use_limit_ang_x = True
+            handleObject.rigid_body_constraint.use_limit_ang_y = True
+            handleObject.rigid_body_constraint.use_limit_ang_z = True
+            handleObject.rigid_body_constraint.use_spring_ang_x = True
+            handleObject.rigid_body_constraint.use_spring_ang_y = True
+            handleObject.rigid_body_constraint.use_spring_ang_z = True
+            handleObject.rigid_body_constraint.limit_ang_x_lower = 0
+            handleObject.rigid_body_constraint.limit_ang_y_lower = 0
+            handleObject.rigid_body_constraint.limit_ang_z_lower = 0
+            handleObject.rigid_body_constraint.limit_ang_x_upper = 0
+            handleObject.rigid_body_constraint.limit_ang_y_upper = 0
+            handleObject.rigid_body_constraint.limit_ang_z_upper = 0
+    
+    def execute(self, context):
+        sceneObjects = bpy.context.scene.objects
+        #check through selected objects for physics puppet related physics objects
+        for physCandidate in bpy.context.selected_objects:
+            if("PHYPUP_" in physCandidate.name):
+                #split name by underscores to access as tags
+                physObjectTags = physCandidate.name.split("_")
+                #get each handle for each physics object and each physics object for each handle so that all properties are changed appropriately
+                if("phys" in physObjectTags):
+                    self.setPhysConstraintValues(context,physCandidate)
+                    linkedHandleObjectName = physObjectTags[0]+"_"+physObjectTags[1]+"_"+physObjectTags[2]+"_handle"
+                    if(linkedHandleObjectName in sceneObjects):
+                        self.setHandleConstraintValues(context,sceneObjects[linkedHandleObjectName])                 
+                elif("handle" in physObjectTags):
+                    self.setHandleConstraintValues(context,physCandidate)
+                    linkedPhysObjectName = physObjectTags[0]+"_"+physObjectTags[1]+"_"+physObjectTags[2]+"_phys"
+                    if(linkedPhysObjectName in sceneObjects):
+                        self.setPhysConstraintValues(context,sceneObjects[linkedPhysObjectName])
+        return {'FINISHED'}
+
+#function to make a physics link slack
+class PHYPUP_OT_MakeLinksSlack(bpy.types.Operator):
+    bl_idname = "phypup.makelinksslack"
+    bl_label = "make physics object links slack"
+    bl_description = "make the link slack between the selected puppet handle and physics joint (good for arms)"
+    
+    def setPhysConstraintValues(self,context,physObject):
+        if(physObject.rigid_body_constraint != None):
+            physObject.rigid_body_constraint.use_spring_ang_x = False
+            physObject.rigid_body_constraint.use_spring_ang_y = False
+            physObject.rigid_body_constraint.use_spring_ang_z = False
+            physObject.rigid_body_constraint.limit_lin_x_lower = -0.05
+            physObject.rigid_body_constraint.limit_lin_y_lower = -0.05
+            physObject.rigid_body_constraint.limit_lin_z_lower = -0.05
+            physObject.rigid_body_constraint.limit_lin_x_upper = 0.05
+            physObject.rigid_body_constraint.limit_lin_y_upper = 0.05
+            physObject.rigid_body_constraint.limit_lin_z_upper = 0.05
+        
+    def setHandleConstraintValues(self,context,handleObject):
+        if(handleObject.rigid_body_constraint != None):
+            handleObject.rigid_body_constraint.use_limit_ang_x = True
+            handleObject.rigid_body_constraint.use_limit_ang_y = True
+            handleObject.rigid_body_constraint.use_limit_ang_z = True
+            handleObject.rigid_body_constraint.use_spring_ang_x = True
+            handleObject.rigid_body_constraint.use_spring_ang_y = True
+            handleObject.rigid_body_constraint.use_spring_ang_z = True
+            handleObject.rigid_body_constraint.limit_ang_x_lower = -0.1
+            handleObject.rigid_body_constraint.limit_ang_y_lower = -0.1
+            handleObject.rigid_body_constraint.limit_ang_z_lower = -0.1
+            handleObject.rigid_body_constraint.limit_ang_x_upper = 0.1
+            handleObject.rigid_body_constraint.limit_ang_y_upper = 0.1
+            handleObject.rigid_body_constraint.limit_ang_z_upper = 0.1
+    
+    def execute(self, context):
+        sceneObjects = bpy.context.scene.objects
+        #check through selected objects for physics puppet related physics objects
+        for physCandidate in bpy.context.selected_objects:
+            if("PHYPUP_" in physCandidate.name):
+                #split name by underscores to access as tags
+                physObjectTags = physCandidate.name.split("_")
+                #get each handle for each physics object and each physics object for each handle so that all properties are changed appropriately
+                if("phys" in physObjectTags):
+                    self.setPhysConstraintValues(context,physCandidate)
+                    linkedHandleObjectName = physObjectTags[0]+"_"+physObjectTags[1]+"_"+physObjectTags[2]+"_handle"
+                    if(linkedHandleObjectName in sceneObjects):
+                        self.setHandleConstraintValues(context,sceneObjects[linkedHandleObjectName])                 
+                elif("handle" in physObjectTags):
+                    self.setHandleConstraintValues(context,physCandidate)
+                    linkedPhysObjectName = physObjectTags[0]+"_"+physObjectTags[1]+"_"+physObjectTags[2]+"_phys"
+                    if(linkedPhysObjectName in sceneObjects):
+                        self.setPhysConstraintValues(context,sceneObjects[linkedPhysObjectName])
+        return {'FINISHED'}
+    
+#function to make a physics link floppy
+class PHYPUP_OT_MakeLinksFloppy(bpy.types.Operator):
+    bl_idname = "phypup.makelinksfloppy"
+    bl_label = "make physics object links floppy"
+    bl_description = "make the links have no constraint between the selected puppet handles and physics joints, so that they move loosely (good for hair and accessories)"
+    
+    def setPhysConstraintValues(self,context,physObject):
+        if(physObject.rigid_body_constraint != None):
+            physObject.rigid_body_constraint.use_spring_ang_x = True
+            physObject.rigid_body_constraint.use_spring_ang_y = True
+            physObject.rigid_body_constraint.use_spring_ang_z = True
+            physObject.rigid_body_constraint.spring_stiffness_ang_x = 500
+            physObject.rigid_body_constraint.spring_stiffness_ang_y = 500
+            physObject.rigid_body_constraint.spring_stiffness_ang_z = 500
+            physObject.rigid_body_constraint.spring_damping_ang_x = 1
+            physObject.rigid_body_constraint.spring_damping_ang_y = 1
+            physObject.rigid_body_constraint.spring_damping_ang_z = 1
+            physObject.rigid_body_constraint.limit_lin_x_lower = -0.05
+            physObject.rigid_body_constraint.limit_lin_y_lower = -0.05
+            physObject.rigid_body_constraint.limit_lin_z_lower = -0.05
+            physObject.rigid_body_constraint.limit_lin_x_upper = 0.05
+            physObject.rigid_body_constraint.limit_lin_y_upper = 0.05
+            physObject.rigid_body_constraint.limit_lin_z_upper = 0.05
+        
+    def setHandleConstraintValues(self,context,handleObject):
+        if(handleObject.rigid_body_constraint != None):
+            handleObject.rigid_body_constraint.use_limit_ang_x = False
+            handleObject.rigid_body_constraint.use_limit_ang_y = False
+            handleObject.rigid_body_constraint.use_limit_ang_z = False
+            handleObject.rigid_body_constraint.use_spring_ang_x = False
+            handleObject.rigid_body_constraint.use_spring_ang_y = False
+            handleObject.rigid_body_constraint.use_spring_ang_z = False
+    
+    def execute(self, context):
+        sceneObjects = bpy.context.scene.objects
+        #check through selected objects for physics puppet related physics objects
+        for physCandidate in bpy.context.selected_objects:
+            if("PHYPUP_" in physCandidate.name):
+                #split name by underscores to access as tags
+                physObjectTags = physCandidate.name.split("_")
+                #get each handle for each physics object and each physics object for each handle so that all properties are changed appropriately
+                if("phys" in physObjectTags):
+                    self.setPhysConstraintValues(context,physCandidate)
+                    linkedHandleObjectName = physObjectTags[0]+"_"+physObjectTags[1]+"_"+physObjectTags[2]+"_handle"
+                    if(linkedHandleObjectName in sceneObjects):
+                        self.setHandleConstraintValues(context,sceneObjects[linkedHandleObjectName])                 
+                elif("handle" in physObjectTags):
+                    self.setHandleConstraintValues(context,physCandidate)
+                    linkedPhysObjectName = physObjectTags[0]+"_"+physObjectTags[1]+"_"+physObjectTags[2]+"_phys"
+                    if(linkedPhysObjectName in sceneObjects):
+                        self.setPhysConstraintValues(context,sceneObjects[linkedPhysObjectName])
+        return {'FINISHED'}
 
 #function to create physics puppet controls for the currently selected armature
-class PHYPUPCreateArmaturePuppet(bpy.types.Operator):
+class PHYPUP_OT_CreateArmaturePuppet(bpy.types.Operator):
     bl_idname = "phypup.makepuppet"
     bl_label = "create physics puppet"
     bl_description = "set up physics and puppet handles for the selected armature"
@@ -150,22 +282,43 @@ class PHYPUPCreateArmaturePuppet(bpy.types.Operator):
         #pick up armature from first in selection, make sure it is armature
         armatureObject = bpy.context.selected_objects[0]
         if armatureObject.type == 'ARMATURE':
+            #create an initial rigid body to make sure that the rigid body world exists
+            bpy.ops.mesh.primitive_cube_add(size=2)
+            RigidBodyCube = bpy.context.selected_objects[0]
+            bpy.ops.rigidbody.object_add()
+            bpy.ops.object.delete(use_global=False, confirm=False)
+            bpy.ops.object.select_all(action='DESELECT')
+            armatureObject.select_set(True)
+            context.view_layer.objects.active = armatureObject
+            #configure the rigid body world
             bpy.context.scene.rigidbody_world.time_scale = 1.4
             bpy.context.scene.rigidbody_world.steps_per_second = 100
             bpy.context.scene.rigidbody_world.solver_iterations = 100
             bpy.context.scene.gravity = [0,0,-100]
             bpy.context.scene.tool_settings.use_keyframe_insert_auto = False
-            #uncomment to force selection of all bones
             bpy.ops.object.posemode_toggle()
+            #option to force selection of all bones, disabled by comment
             #bpy.ops.pose.select_all(action='SELECT')
             bpy.ops.object.editmode_toggle()
             for targetBone in bpy.context.selected_editable_bones:
                 targetBone.use_connect = False
             #back into posemode to create the colliders for each bone
             bpy.ops.object.posemode_toggle()
+            #for operations performed only once
+            firstPass = True
             for targetBone in bpy.context.selected_pose_bones:
                 bpy.ops.object.posemode_toggle()
-                bpy.ops.mesh.primitive_plane_add(radius = targetBone.length*0.3)
+                bpy.ops.mesh.primitive_plane_add(size = targetBone.length*0.3)
+                #manage collections
+                mainCollectionName=bpy.data.collections.keys()[0]
+                if("PHYPUPPhysJoints" not in bpy.data.collections.keys()):
+                    bpy.ops.collection.create(name="PHYPUPPhysJoints")
+                    bpy.data.collections[mainCollectionName].children.link(bpy.data.collections["PHYPUPPhysJoints"])
+                else:
+                    bpy.data.collections["PHYPUPPhysJoints"].objects.link(bpy.context.selected_objects[0])
+                    #bpy.ops.collection.objects_add_active(collection='PHYPUPPhysJoints')
+                #TODO: this only works if Collection is selected
+                bpy.ops.collection.objects_remove(collection=mainCollectionName)
                 bonePhysObject = bpy.context.selected_objects[0]
                 bonePhysObject.name = "PHYPUP_" + armatureObject.name + "_" + targetBone.name + "_phys"
                 bpy.context.object.rotation_mode = 'QUATERNION'
@@ -274,25 +427,20 @@ class PHYPUPCreateArmaturePuppet(bpy.types.Operator):
             
         return {'FINISHED'}
             
-    
-#register all classes when addon is loaded
-def register():
-    bpy.utils.register_class(PHYPUPPuppetPanel)
-    bpy.utils.register_class(PHYPUPCreateArmaturePuppet)
-    bpy.utils.register_class(PHYPUPRigidBodyPanel)
-    bpy.utils.register_class(PHYPUPMakeNarrower)
-    bpy.utils.register_class(PHYPUPMakeWider)
-    bpy.utils.register_class(PHYPUPShowPhys)
-    bpy.utils.register_class(PHYPUPHidePhys)
-#unregister all classes when addon is removed
-def unregister():
-    bpy.utils.unregister_class(PHYPUPPuppetPanel)
-    bpy.utils.unregister_class(PHYPUPCreateArmaturePuppet)
-    bpy.utils.unregister_class(PHYPUPRigidBodyPanel)
-    bpy.utils.unregister_class(PHYPUPMakeNarrower)
-    bpy.utils.unregister_class(PHYPUPMakeWider)
-    bpy.utils.unregister_class(PHYPUPShowPhys)
-    bpy.utils.unregister_class(PHYPUPHidePhys)
+#register and unregister all Jeane Spline classes
+phypupClasses = (  PHYPUP_PT_PuppetPanel,
+                    PHYPUP_PT_RigidBodyPanel,
+                    PHYPUP_OT_CreateArmaturePuppet,
+                    PHYPUP_OT_MakeNarrower,
+                    PHYPUP_OT_MakeWider,
+                    PHYPUP_OT_ShowPhys,
+                    PHYPUP_OT_HidePhys,
+                    PHYPUP_OT_MakeLinksRigid,
+                    PHYPUP_OT_MakeLinksSlack,
+                    PHYPUP_OT_MakeLinksFloppy)
+
+register, unregister = bpy.utils.register_classes_factory(phypupClasses)
+
 #allow debugging for this addon in the Blender text editor
 if __name__ == '__main__':
     register()
