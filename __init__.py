@@ -500,7 +500,7 @@ class PHYPUP_OT_CreateArmaturePuppet(bpy.types.Operator):
             
         return {'FINISHED'}
             
-#register and unregister all Jeane Spline classes
+#register and unregister all Physics Puppet classes
 phypupClasses = (  PHYPUP_PT_PuppetPanel,
                     PHYPUP_PT_RigidBodyPanel,
                     PHYPUP_OT_CreateArmaturePuppet,
