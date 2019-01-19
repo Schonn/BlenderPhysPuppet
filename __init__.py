@@ -53,35 +53,10 @@ class PHYPUP_PT_RigidBodyPanel(bpy.types.Panel):
         self.layout.operator('phypup.makewider', text ='Make Wider')
         self.layout.operator('phypup.makelinksrigid', text ='Make Links Rigid')
         self.layout.operator('phypup.makelinksslack', text ='Make Links Slack')
+        self.layout.operator('phypup.makelinksspringy', text ='Make Links Springy')
         self.layout.operator('phypup.makelinksfloppy', text ='Make Links Floppy')
-        self.layout.operator('phypup.showrigidbodies', text ='Show All Rigid Bodies')
-        self.layout.operator('phypup.hiderigidbodies', text ='Hide All Rigid Bodies')
-
-#function to hide all rigid body collision objects
-class PHYPUP_OT_HidePhys(bpy.types.Operator):
-    bl_idname = "phypup.hiderigidbodies"
-    bl_label = "hide puppet rigid bodies"
-    bl_description = "turn visibility off for all rigid bodies associated with physics puppets"
-    
-    def execute(self, context):
-        sceneObjects = bpy.context.scene.objects
-        for potentialPhysObject in sceneObjects:
-            if("PHYPUP_" in potentialPhysObject.name and "_phys" in potentialPhysObject.name):
-                potentialPhysObject.hide_viewport = True
-        return {'FINISHED'}
-    
-#function to show all rigid body collision objects
-class PHYPUP_OT_ShowPhys(bpy.types.Operator):
-    bl_idname = "phypup.showrigidbodies"
-    bl_label = "show puppet rigid bodies"
-    bl_description = "turn visibility on for all rigid bodies associated with physics puppets"
-    
-    def execute(self, context):
-        sceneObjects = bpy.context.scene.objects
-        for potentialPhysObject in sceneObjects:
-            if("PHYPUP_" in potentialPhysObject.name and "_phys" in potentialPhysObject.name):
-                potentialPhysObject.hide_viewport = False
-        return {'FINISHED'}
+        self.layout.operator('phypup.setfrictionhigh', text ='Set Friction High')
+        self.layout.operator('phypup.setfrictionlow', text ='Set Friction Low')
 
 #function to make a physics object thinner 
 class PHYPUP_OT_MakeNarrower(bpy.types.Operator):
@@ -90,11 +65,12 @@ class PHYPUP_OT_MakeNarrower(bpy.types.Operator):
     bl_description = "edit a physics object to become narrower"
     
     def execute(self, context):
-        bpy.ops.object.editmode_toggle()
-        bpy.ops.mesh.select_all(action='SELECT')
-        bpy.context.scene.tool_settings.transform_pivot_point = 'INDIVIDUAL_ORIGINS'
-        bpy.ops.transform.resize(value=(0.8,0.8,0.8),constraint_axis=(True,False,True),constraint_orientation='LOCAL')
-        bpy.ops.object.editmode_toggle()    
+        if("PHYPUP_" in context.view_layer.objects.active.name):
+            bpy.ops.object.editmode_toggle()
+            bpy.ops.mesh.select_all(action='SELECT')
+            bpy.context.scene.tool_settings.transform_pivot_point = 'INDIVIDUAL_ORIGINS'
+            bpy.ops.transform.resize(value=(0.8,0.8,0.8),constraint_axis=(True,False,True),constraint_orientation='LOCAL')
+            bpy.ops.object.editmode_toggle()    
         return {'FINISHED'}
 
 #function to make a physics object thinner 
@@ -104,11 +80,12 @@ class PHYPUP_OT_MakeWider(bpy.types.Operator):
     bl_description = "edit a physics object to become wider"
     
     def execute(self, context):
-        bpy.ops.object.editmode_toggle()
-        bpy.ops.mesh.select_all(action='SELECT')
-        bpy.context.scene.tool_settings.transform_pivot_point = 'INDIVIDUAL_ORIGINS'
-        bpy.ops.transform.resize(value=(1.25,1.25,1.25),constraint_axis=(True,False,True),constraint_orientation='LOCAL')
-        bpy.ops.object.editmode_toggle()    
+        if("PHYPUP_" in context.view_layer.objects.active.name):
+            bpy.ops.object.editmode_toggle()
+            bpy.ops.mesh.select_all(action='SELECT')
+            bpy.context.scene.tool_settings.transform_pivot_point = 'INDIVIDUAL_ORIGINS'
+            bpy.ops.transform.resize(value=(1.25,1.25,1.25),constraint_axis=(True,False,True),constraint_orientation='LOCAL')
+            bpy.ops.object.editmode_toggle()    
         return {'FINISHED'}
     
 #function to make a physics link rigid
@@ -122,6 +99,9 @@ class PHYPUP_OT_MakeLinksRigid(bpy.types.Operator):
             physObject.rigid_body_constraint.use_spring_ang_x = False
             physObject.rigid_body_constraint.use_spring_ang_y = False
             physObject.rigid_body_constraint.use_spring_ang_z = False
+            physObject.rigid_body_constraint.use_limit_ang_x = False
+            physObject.rigid_body_constraint.use_limit_ang_y = False
+            physObject.rigid_body_constraint.use_limit_ang_z = False
             physObject.rigid_body_constraint.limit_lin_x_lower = 0
             physObject.rigid_body_constraint.limit_lin_y_lower = 0
             physObject.rigid_body_constraint.limit_lin_z_lower = 0
@@ -175,6 +155,9 @@ class PHYPUP_OT_MakeLinksSlack(bpy.types.Operator):
             physObject.rigid_body_constraint.use_spring_ang_x = False
             physObject.rigid_body_constraint.use_spring_ang_y = False
             physObject.rigid_body_constraint.use_spring_ang_z = False
+            physObject.rigid_body_constraint.use_limit_ang_x = False
+            physObject.rigid_body_constraint.use_limit_ang_y = False
+            physObject.rigid_body_constraint.use_limit_ang_z = False
             physObject.rigid_body_constraint.limit_lin_x_lower = -0.05
             physObject.rigid_body_constraint.limit_lin_y_lower = -0.05
             physObject.rigid_body_constraint.limit_lin_z_lower = -0.05
@@ -216,7 +199,70 @@ class PHYPUP_OT_MakeLinksSlack(bpy.types.Operator):
                     if(linkedPhysObjectName in sceneObjects):
                         self.setPhysConstraintValues(context,sceneObjects[linkedPhysObjectName])
         return {'FINISHED'}
+
+#function to make a physics link springy
+class PHYPUP_OT_MakeLinksSpringy(bpy.types.Operator):
+    bl_idname = "phypup.makelinksspringy"
+    bl_label = "make physics object links springy"
+    bl_description = "make the links have no constraint between the handles and physics objects, so that they move like a spring (good for antennae)"
     
+    def setPhysConstraintValues(self,context,physObject):
+        if(physObject.rigid_body_constraint != None):
+            physObject.rigid_body_constraint.use_spring_ang_x = True
+            physObject.rigid_body_constraint.use_spring_ang_y = True
+            physObject.rigid_body_constraint.use_spring_ang_z = True
+            physObject.rigid_body_constraint.spring_stiffness_ang_x = 3000
+            physObject.rigid_body_constraint.spring_stiffness_ang_y = 3000
+            physObject.rigid_body_constraint.spring_stiffness_ang_z = 3000
+            physObject.rigid_body_constraint.spring_damping_ang_x = 3
+            physObject.rigid_body_constraint.spring_damping_ang_y = 3
+            physObject.rigid_body_constraint.spring_damping_ang_z = 3
+            physObject.rigid_body_constraint.limit_lin_x_lower = -0.05
+            physObject.rigid_body_constraint.limit_lin_y_lower = -0.05
+            physObject.rigid_body_constraint.limit_lin_z_lower = -0.05
+            physObject.rigid_body_constraint.limit_lin_x_upper = 0.05
+            physObject.rigid_body_constraint.limit_lin_y_upper = 0.05
+            physObject.rigid_body_constraint.limit_lin_z_upper = 0.05
+            physObject.rigid_body_constraint.use_limit_ang_x = True
+            physObject.rigid_body_constraint.use_limit_ang_y = True
+            physObject.rigid_body_constraint.use_limit_ang_z = True
+            physObject.rigid_body_constraint.limit_ang_x_lower = -0.08
+            physObject.rigid_body_constraint.limit_ang_y_lower = -0.08
+            physObject.rigid_body_constraint.limit_ang_z_lower = -0.08
+            physObject.rigid_body_constraint.limit_ang_x_upper = 0.08
+            physObject.rigid_body_constraint.limit_ang_y_upper = 0.08
+            physObject.rigid_body_constraint.limit_ang_z_upper = 0.08
+            
+        
+    def setHandleConstraintValues(self,context,handleObject):
+        if(handleObject.rigid_body_constraint != None):
+            handleObject.rigid_body_constraint.use_limit_ang_x = False
+            handleObject.rigid_body_constraint.use_limit_ang_y = False
+            handleObject.rigid_body_constraint.use_limit_ang_z = False
+            handleObject.rigid_body_constraint.use_spring_ang_x = False
+            handleObject.rigid_body_constraint.use_spring_ang_y = False
+            handleObject.rigid_body_constraint.use_spring_ang_z = False
+    
+    def execute(self, context):
+        sceneObjects = bpy.context.scene.objects
+        #check through selected objects for physics puppet related physics objects
+        for physCandidate in bpy.context.selected_objects:
+            if("PHYPUP_" in physCandidate.name):
+                #split name by underscores to access as tags
+                physObjectTags = physCandidate.name.split("_")
+                #get each handle for each physics object and each physics object for each handle so that all properties are changed appropriately
+                if("phys" in physObjectTags):
+                    self.setPhysConstraintValues(context,physCandidate)
+                    linkedHandleObjectName = physObjectTags[0]+"_"+physObjectTags[1]+"_"+physObjectTags[2]+"_handle"
+                    if(linkedHandleObjectName in sceneObjects):
+                        self.setHandleConstraintValues(context,sceneObjects[linkedHandleObjectName])                 
+                elif("handle" in physObjectTags):
+                    self.setHandleConstraintValues(context,physCandidate)
+                    linkedPhysObjectName = physObjectTags[0]+"_"+physObjectTags[1]+"_"+physObjectTags[2]+"_phys"
+                    if(linkedPhysObjectName in sceneObjects):
+                        self.setPhysConstraintValues(context,sceneObjects[linkedPhysObjectName])
+        return {'FINISHED'}
+
 #function to make a physics link floppy
 class PHYPUP_OT_MakeLinksFloppy(bpy.types.Operator):
     bl_idname = "phypup.makelinksfloppy"
@@ -228,6 +274,9 @@ class PHYPUP_OT_MakeLinksFloppy(bpy.types.Operator):
             physObject.rigid_body_constraint.use_spring_ang_x = True
             physObject.rigid_body_constraint.use_spring_ang_y = True
             physObject.rigid_body_constraint.use_spring_ang_z = True
+            physObject.rigid_body_constraint.use_limit_ang_x = False
+            physObject.rigid_body_constraint.use_limit_ang_y = False
+            physObject.rigid_body_constraint.use_limit_ang_z = False
             physObject.rigid_body_constraint.spring_stiffness_ang_x = 500
             physObject.rigid_body_constraint.spring_stiffness_ang_y = 500
             physObject.rigid_body_constraint.spring_stiffness_ang_z = 500
@@ -268,6 +317,30 @@ class PHYPUP_OT_MakeLinksFloppy(bpy.types.Operator):
                     linkedPhysObjectName = physObjectTags[0]+"_"+physObjectTags[1]+"_"+physObjectTags[2]+"_phys"
                     if(linkedPhysObjectName in sceneObjects):
                         self.setPhysConstraintValues(context,sceneObjects[linkedPhysObjectName])
+        return {'FINISHED'}
+    
+#function to set high friction on selected physics objects
+class PHYPUP_OT_SetFrictionHigh(bpy.types.Operator):
+    bl_idname = "phypup.setfrictionhigh"
+    bl_label = "set high friction on the selected physics objects"
+    bl_description = "make the selected physics objects have high friction (good for hands and feet)"
+    
+    def execute(self, context):
+        for physCandidate in bpy.context.selected_objects:
+            if(physCandidate.rigid_body != None):
+                physCandidate.rigid_body.friction = 999999
+        return {'FINISHED'}
+    
+#function to set low friction on selected physics objects
+class PHYPUP_OT_SetFrictionLow(bpy.types.Operator):
+    bl_idname = "phypup.setfrictionlow"
+    bl_label = "set low friction on the selected physics objects"
+    bl_description = "make the selected physics objects have low friction (good for parts which need to move and slide easily)"
+    
+    def execute(self, context):
+        for physCandidate in bpy.context.selected_objects:
+            if(physCandidate.rigid_body != None):
+                physCandidate.rigid_body.friction = 0.5
         return {'FINISHED'}
 
 #function to create physics puppet controls for the currently selected armature
@@ -433,11 +506,12 @@ phypupClasses = (  PHYPUP_PT_PuppetPanel,
                     PHYPUP_OT_CreateArmaturePuppet,
                     PHYPUP_OT_MakeNarrower,
                     PHYPUP_OT_MakeWider,
-                    PHYPUP_OT_ShowPhys,
-                    PHYPUP_OT_HidePhys,
                     PHYPUP_OT_MakeLinksRigid,
                     PHYPUP_OT_MakeLinksSlack,
-                    PHYPUP_OT_MakeLinksFloppy)
+                    PHYPUP_OT_MakeLinksSpringy,
+                    PHYPUP_OT_MakeLinksFloppy,
+                    PHYPUP_OT_SetFrictionLow,
+                    PHYPUP_OT_SetFrictionHigh)
 
 register, unregister = bpy.utils.register_classes_factory(phypupClasses)
 
