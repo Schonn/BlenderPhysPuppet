@@ -349,12 +349,30 @@ class PHYPUP_OT_CreateArmaturePuppet(bpy.types.Operator):
     bl_label = "create physics puppet"
     bl_description = "set up physics and puppet handles for the selected armature"
     
+    def setupCollection(self,context,newCollectionName):
+        if(newCollectionName not in bpy.data.collections.keys()):
+            bpy.ops.collection.create(name=newCollectionName)
+            if(context.collection.name == "Master Collection"):
+                bpy.context.scene.collection.children.link(bpy.data.collections[newCollectionName])
+            else:
+                bpy.data.collections[context.collection.name].children.link(bpy.data.collections[newCollectionName])
+
+    def assignToCollection(self,context,assignCollectionName,assignObject):
+        if(assignObject.name not in bpy.data.collections[assignCollectionName].objects):
+            bpy.data.collections[assignCollectionName].objects.link(assignObject)
+            if(context.collection.name == "Master Collection"):
+                bpy.context.scene.collection.objects.unlink(assignObject)
+            else:
+                bpy.data.collections[context.collection.name].objects.unlink(assignObject)
+    
     def execute(self, context):
         handleOffsetDistance = 5
         sceneObjects = bpy.context.scene.objects
         #pick up armature from first in selection, make sure it is armature
         armatureObject = bpy.context.selected_objects[0]
         if armatureObject.type == 'ARMATURE':
+            #create a collection
+            self.setupCollection(context,"PHYPUPObjects_" + armatureObject.name)
             #create an initial rigid body to make sure that the rigid body world exists
             bpy.ops.mesh.primitive_cube_add(size=2)
             RigidBodyCube = bpy.context.selected_objects[0]
@@ -377,22 +395,13 @@ class PHYPUP_OT_CreateArmaturePuppet(bpy.types.Operator):
                 targetBone.use_connect = False
             #back into posemode to create the colliders for each bone
             bpy.ops.object.posemode_toggle()
-            #for operations performed only once
-            firstPass = True
             for targetBone in bpy.context.selected_pose_bones:
                 bpy.ops.object.posemode_toggle()
                 bpy.ops.mesh.primitive_plane_add(size = targetBone.length*0.3)
-                #manage collections
-                mainCollectionName=bpy.data.collections.keys()[0]
-                if("PHYPUPPhysJoints" not in bpy.data.collections.keys()):
-                    bpy.ops.collection.create(name="PHYPUPPhysJoints")
-                    bpy.data.collections[mainCollectionName].children.link(bpy.data.collections["PHYPUPPhysJoints"])
-                else:
-                    bpy.data.collections["PHYPUPPhysJoints"].objects.link(bpy.context.selected_objects[0])
-                    #bpy.ops.collection.objects_add_active(collection='PHYPUPPhysJoints')
-                #TODO: this only works if Collection is selected
-                bpy.ops.collection.objects_remove(collection=mainCollectionName)
                 bonePhysObject = bpy.context.selected_objects[0]
+                #add rigid bodies to the PHYPUP collection
+                self.assignToCollection(context,"PHYPUPObjects_" + armatureObject.name,bonePhysObject)
+                #naming, scaling and parenting
                 bonePhysObject.name = "PHYPUP_" + armatureObject.name + "_" + targetBone.name + "_phys"
                 bpy.context.object.rotation_mode = 'QUATERNION'
                 bonePhysObject.parent = armatureObject
@@ -482,7 +491,9 @@ class PHYPUP_OT_CreateArmaturePuppet(bpy.types.Operator):
             #create an armature to control the physics handles
             handleArmature = armatureObject.copy()
             handleArmature.data = armatureObject.data.copy()
+            handleArmature.name = "PHYPUP_" + armatureObject.name + "_HandleArmature"
             bpy.context.collection.objects.link(handleArmature)
+            self.assignToCollection(context,"PHYPUPObjects_" + armatureObject.name,handleArmature)
             bpy.ops.object.select_all(action='DESELECT')
             context.view_layer.objects.active = handleArmature
             handleArmature.location[0] = handleArmature.location[0] + handleOffsetDistance
