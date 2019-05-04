@@ -39,6 +39,7 @@ class PHYPUP_PT_PuppetPanel(bpy.types.Panel):
 
     def draw(self, context):
         self.layout.operator('phypup.makepuppet', text ='Create Puppet From Armature')
+        self.layout.operator('phypup.makedriverarmature', text ='Create Driver Armature')
         
 #panel class for rigid body related items in object mode
 class PHYPUP_PT_RigidBodyPanel(bpy.types.Panel):
@@ -49,6 +50,7 @@ class PHYPUP_PT_RigidBodyPanel(bpy.types.Panel):
     bl_category = 'Puppet Physics'
 
     def draw(self, context):
+        self.layout.operator('phypup.clearcache', text ='Force Clear Cache')
         self.layout.operator('phypup.makenarrower', text ='Make Narrower')
         self.layout.operator('phypup.makewider', text ='Make Wider')
         self.layout.operator('phypup.makelinksrigid', text ='Make Links Rigid')
@@ -263,6 +265,18 @@ class PHYPUP_OT_MakeLinksSpringy(bpy.types.Operator):
                         self.setPhysConstraintValues(context,sceneObjects[linkedPhysObjectName])
         return {'FINISHED'}
 
+#function to nudge the physics timescale to clear the physics cache
+class PHYPUP_OT_ClearCache(bpy.types.Operator):
+    bl_idname = "phypup.clearcache"
+    bl_label = "clear physics cache"
+    bl_description = "clear physics cache by nudging the physics timescale"
+    
+    def execute(self, context):
+        if(bpy.context.scene.rigidbody_world != None):
+            bpy.context.scene.rigidbody_world.time_scale = bpy.context.scene.rigidbody_world.time_scale + 1
+            bpy.context.scene.rigidbody_world.time_scale = bpy.context.scene.rigidbody_world.time_scale - 1
+        return {'FINISHED'}
+
 #function to make a physics link floppy
 class PHYPUP_OT_MakeLinksFloppy(bpy.types.Operator):
     bl_idname = "phypup.makelinksfloppy"
@@ -366,6 +380,9 @@ class PHYPUP_OT_CreateArmaturePuppet(bpy.types.Operator):
                 bpy.data.collections[context.collection.name].objects.unlink(assignObject)
     
     def execute(self, context):
+        #speed up processing by setting simplify
+        context.scene.render.use_simplify = True
+        context.scene.render.simplify_subdivision = 0
         handleOffsetDistance = 5
         sceneObjects = bpy.context.scene.objects
         #pick up armature from first in selection, make sure it is armature
@@ -446,7 +463,6 @@ class PHYPUP_OT_CreateArmaturePuppet(bpy.types.Operator):
                     bonePhysObject.rigid_body_constraint.limit_lin_z_upper = 0.05
                     bonePhysObject.rigid_body_constraint.object1 = bonePhysObject
                     bonePhysObject.hide_render = True
-                    #bonePhysObject.rigid_body_constraint.object2 = sceneObjects["PHYPUP_" + armatureObject.name + "_" + targetBone.parent.name + "_phys"]
                 #set up physics control handle proxy
                 bpy.ops.object.duplicate_move(OBJECT_OT_duplicate={"linked":False, "mode":'TRANSLATION'},TRANSFORM_OT_translate={"value":(handleOffsetDistance,0,0)})
                 physHandleObject = bpy.context.selected_objects[0]
@@ -508,9 +524,85 @@ class PHYPUP_OT_CreateArmaturePuppet(bpy.types.Operator):
                 boneHandleObject.location = [0,-targetBone.length,0]
                 boneHandleObject.rotation_quaternion = [1,0,0,0]
             bpy.ops.object.posemode_toggle()
-            
+            #optionally, simplify can be turned off after processing
+            #context.scene.render.use_simplify = False
         return {'FINISHED'}
-            
+    
+#function to create a duplicate of the puppet armature with a driver object for realtime action blending
+class PHYPUP_OT_CreateDriverArmature(bpy.types.Operator):
+    bl_idname = "phypup.makedriverarmature"
+    bl_label = "create driver armature"
+    bl_description = "create a copy of the armature with drivers to affect the influence on the original armature"
+    
+    def setupCollection(self,context,newCollectionName):
+        if(newCollectionName not in bpy.data.collections.keys()):
+            bpy.ops.collection.create(name=newCollectionName)
+            if(context.collection.name == "Master Collection"):
+                bpy.context.scene.collection.children.link(bpy.data.collections[newCollectionName])
+            else:
+                bpy.data.collections[context.collection.name].children.link(bpy.data.collections[newCollectionName])
+
+    def assignToCollection(self,context,assignCollectionName,assignObject):
+        if(assignObject.name not in bpy.data.collections[assignCollectionName].objects):
+            bpy.data.collections[assignCollectionName].objects.link(assignObject)
+            if(context.collection.name == "Master Collection"):
+                bpy.context.scene.collection.objects.unlink(assignObject)
+            else:
+                bpy.data.collections[context.collection.name].objects.unlink(assignObject)
+    
+    def execute(self, context):   
+        #speed up processing by setting simplify
+        context.scene.render.use_simplify = True
+        context.scene.render.simplify_subdivision = 0
+        #pick up armature from first in selection, make sure it is armature
+        armatureObject = bpy.context.selected_objects[0]
+        #create a collection
+        self.setupCollection(context,"PHYPUPDriverArmatures_" + armatureObject.name)
+        if armatureObject.type == 'ARMATURE':
+            #create a duplicate armature which can control the original using a driver
+            bpy.ops.object.duplicate_move(OBJECT_OT_duplicate={"linked":False,"mode":'TRANSLATION'}, TRANSFORM_OT_translate={"value":(5,0,0)})
+            driverArmature = bpy.context.selected_objects[0]
+            driverArmature.name = "PHYPUP_" + armatureObject.name + "_DriverArmature"
+            self.assignToCollection(context,"PHYPUPDriverArmatures_" + armatureObject.name,driverArmature)
+            driverArmature.location[0] = driverArmature.location[0] + 5
+            driverArmature.show_in_front = True
+            bpy.ops.object.posemode_toggle()
+            #clear constraints in bones so that duplicate driven armatures don't control each other
+            bpy.ops.pose.select_all(action='SELECT')
+            for targetBone in bpy.context.selected_pose_bones:
+                for constraintToRemove in targetBone.constraints:
+                    targetBone.constraints.remove(constraintToRemove)
+            bpy.ops.object.posemode_toggle()   
+            bpy.ops.object.select_all(action='DESELECT')
+            bpy.ops.object.empty_add(type='PLAIN_AXES', view_align=False, location=driverArmature.location)
+            driverEmptyObject = bpy.context.selected_objects[0]
+            #add driver empty to the PHYPUP collection
+            self.assignToCollection(context,"PHYPUPDriverArmatures_" + armatureObject.name,driverEmptyObject)
+            driverEmptyObject.name = "PHYPUP_" + armatureObject.name + "_DriverArmatureEmpty"
+            driverEmptyObject.location = [driverEmptyObject.location[0] + 5,driverEmptyObject.location[1],0]
+            bpy.ops.object.select_all(action='DESELECT')
+            context.view_layer.objects.active = armatureObject
+            bpy.ops.object.posemode_toggle()
+            #create rotation constraints driven by the driver empty object
+            for targetBone in bpy.context.selected_pose_bones:
+                boneCopyRotation = targetBone.constraints.new('COPY_ROTATION')
+                boneCopyRotation.name = "PHYPUP_CopyRotationDriven"
+                boneCopyRotation.target = driverArmature
+                boneCopyRotation.subtarget = targetBone.name
+                boneCopyRotation.target_space = 'LOCAL'
+                boneCopyRotation.owner_space = 'LOCAL'
+                copyRotationDriver = boneCopyRotation.driver_add("influence")
+                copyRotationDriver.driver.expression = "PHYPUPDriverVar * 0.05"
+                rotationDriverVar = copyRotationDriver.driver.variables.new()
+                rotationDriverVar.name = "PHYPUPDriverVar"
+                rotationDriverVar.type = 'TRANSFORMS'
+                rotationDriverVar.targets[0].transform_type = 'LOC_Z'
+                rotationDriverVar.targets[0].id = driverEmptyObject
+            bpy.ops.object.posemode_toggle()
+        #optionally, simplify can be turned off after processing
+        #context.scee.render.use_simplify = False
+        return {'FINISHED'}
+             
 #register and unregister all Physics Puppet classes
 phypupClasses = (  PHYPUP_PT_PuppetPanel,
                     PHYPUP_PT_RigidBodyPanel,
@@ -522,7 +614,9 @@ phypupClasses = (  PHYPUP_PT_PuppetPanel,
                     PHYPUP_OT_MakeLinksSpringy,
                     PHYPUP_OT_MakeLinksFloppy,
                     PHYPUP_OT_SetFrictionLow,
-                    PHYPUP_OT_SetFrictionHigh)
+                    PHYPUP_OT_SetFrictionHigh,
+                    PHYPUP_OT_CreateDriverArmature,
+                    PHYPUP_OT_ClearCache)
 
 register, unregister = bpy.utils.register_classes_factory(phypupClasses)
 
