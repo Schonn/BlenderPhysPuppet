@@ -591,6 +591,7 @@ class PHYPUP_OT_CreateDriverArmature(bpy.types.Operator):
                 boneCopyRotation.subtarget = targetBone.name
                 boneCopyRotation.target_space = 'LOCAL'
                 boneCopyRotation.owner_space = 'LOCAL'
+                boneCopyRotation.use_offset = True
                 copyRotationDriver = boneCopyRotation.driver_add("influence")
                 copyRotationDriver.driver.expression = "PHYPUPDriverVar * 0.05"
                 rotationDriverVar = copyRotationDriver.driver.variables.new()
