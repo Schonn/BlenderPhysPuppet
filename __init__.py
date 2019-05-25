@@ -426,8 +426,8 @@ class PHYPUP_OT_CreateArmaturePuppet(bpy.types.Operator):
                 bonePhysObject.parent_bone = targetBone.name
                 bonePhysObject.location = [0,-targetBone.length,0]
                 bpy.ops.object.editmode_toggle()
-                bpy.ops.transform.rotate(value=1.5708,axis=(0.59,-0.80,2.98),constraint_axis=(True,False,False),constraint_orientation='LOCAL')
-                bpy.ops.mesh.extrude_region_move(TRANSFORM_OT_translate={"value":(0,0,-targetBone.length),"constraint_axis":(False,False,True),"constraint_orientation":'NORMAL'})
+                bpy.ops.transform.rotate(value=1.5708, orient_axis='X', orient_type='LOCAL', constraint_axis=(True, False, False))
+                bpy.ops.mesh.extrude_region_move(MESH_OT_extrude_region={"use_normal_flip":False, "mirror":False}, TRANSFORM_OT_translate={"value":(0,0,-targetBone.length), "orient_type":'NORMAL', "constraint_axis":(False, False, True)})
                 bpy.ops.object.editmode_toggle()
                 #switch the parenting so that the bone follows the physics object
                 bpy.ops.object.parent_clear(type='CLEAR_KEEP_TRANSFORM')
@@ -591,7 +591,6 @@ class PHYPUP_OT_CreateDriverArmature(bpy.types.Operator):
                 boneCopyRotation.subtarget = targetBone.name
                 boneCopyRotation.target_space = 'LOCAL'
                 boneCopyRotation.owner_space = 'LOCAL'
-                boneCopyRotation.use_offset = True
                 copyRotationDriver = boneCopyRotation.driver_add("influence")
                 copyRotationDriver.driver.expression = "PHYPUPDriverVar * 0.05"
                 rotationDriverVar = copyRotationDriver.driver.variables.new()
