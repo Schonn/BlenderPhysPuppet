@@ -48,6 +48,7 @@ class PHYPUP_PT_RigidBodyPanel(bpy.types.Panel):
     bl_label = 'Puppet Rigid Body'
     bl_context = 'objectmode'
     bl_category = 'Puppet Physics'
+    bpy.types.Scene.PHYPUPStretchAmount = bpy.props.FloatProperty(name="Stretch Distance",description="Amount of stretch to allow when making links stretchy",default=1,min=0,max=1000)
 
     def draw(self, context):
         self.layout.operator('phypup.clearcache', text ='Force Clear Cache')
@@ -57,6 +58,8 @@ class PHYPUP_PT_RigidBodyPanel(bpy.types.Panel):
         self.layout.operator('phypup.makelinksslack', text ='Make Links Slack')
         self.layout.operator('phypup.makelinksspringy', text ='Make Links Springy')
         self.layout.operator('phypup.makelinksfloppy', text ='Make Links Floppy')
+        self.layout.prop(context.scene,"PHYPUPStretchAmount",slider=True)
+        self.layout.operator('phypup.makelinksstretchy', text ='Make Links Stretchy')
         self.layout.operator('phypup.setfrictionhigh', text ='Set Friction High')
         self.layout.operator('phypup.setfrictionlow', text ='Set Friction Low')
 
@@ -71,7 +74,7 @@ class PHYPUP_OT_MakeNarrower(bpy.types.Operator):
             bpy.ops.object.editmode_toggle()
             bpy.ops.mesh.select_all(action='SELECT')
             bpy.context.scene.tool_settings.transform_pivot_point = 'INDIVIDUAL_ORIGINS'
-            bpy.ops.transform.resize(value=(0.8,0.8,0.8),constraint_axis=(True,False,True),constraint_orientation='LOCAL')
+            bpy.ops.transform.resize(value=(0.8,0.8,0.8),constraint_axis=(True,False,True),orient_type='LOCAL')
             bpy.ops.object.editmode_toggle()    
         return {'FINISHED'}
 
@@ -86,7 +89,7 @@ class PHYPUP_OT_MakeWider(bpy.types.Operator):
             bpy.ops.object.editmode_toggle()
             bpy.ops.mesh.select_all(action='SELECT')
             bpy.context.scene.tool_settings.transform_pivot_point = 'INDIVIDUAL_ORIGINS'
-            bpy.ops.transform.resize(value=(1.25,1.25,1.25),constraint_axis=(True,False,True),constraint_orientation='LOCAL')
+            bpy.ops.transform.resize(value=(1.25,1.25,1.25),constraint_axis=(True,False,True),orient_type='LOCAL')
             bpy.ops.object.editmode_toggle()    
         return {'FINISHED'}
     
@@ -201,33 +204,67 @@ class PHYPUP_OT_MakeLinksSlack(bpy.types.Operator):
                     if(linkedPhysObjectName in sceneObjects):
                         self.setPhysConstraintValues(context,sceneObjects[linkedPhysObjectName])
         return {'FINISHED'}
+    
+#function to make a physics link stretchy
+class PHYPUP_OT_MakeLinksStretchy(bpy.types.Operator):
+    bl_idname = "phypup.makelinksstretchy"
+    bl_label = "make physics object links stretchy"
+    bl_description = "add stretch to the selected physics objects"
+    
+    def setPhysConstraintValues(self,context,physObject):
+        if(physObject.rigid_body_constraint != None):
+            physObject.rigid_body_constraint.use_spring_y = False
+            physObject.rigid_body_constraint.limit_lin_y_lower = -context.scene.PHYPUPStretchAmount
+        
+    def setHandleConstraintValues(self,context,handleObject):
+        if(handleObject.rigid_body_constraint != None):
+            handleObject.rigid_body_constraint.use_limit_ang_x = True
+            handleObject.rigid_body_constraint.use_limit_ang_y = True
+            handleObject.rigid_body_constraint.use_limit_ang_z = True
+            handleObject.rigid_body_constraint.use_spring_ang_x = True
+            handleObject.rigid_body_constraint.use_spring_ang_y = True
+            handleObject.rigid_body_constraint.use_spring_ang_z = True
+    
+    def execute(self, context):
+        sceneObjects = bpy.context.scene.objects
+        #check through selected objects for physics puppet related physics objects
+        for physCandidate in bpy.context.selected_objects:
+            if("PHYPUP_" in physCandidate.name):
+                #split name by underscores to access as tags
+                physObjectTags = physCandidate.name.split("_")
+                #get each handle for each physics object and each physics object for each handle so that all properties are changed appropriately
+                if("phys" in physObjectTags):
+                    self.setPhysConstraintValues(context,physCandidate)
+                    linkedHandleObjectName = physObjectTags[0]+"_"+physObjectTags[1]+"_"+physObjectTags[2]+"_handle"
+                    if(linkedHandleObjectName in sceneObjects):
+                        self.setHandleConstraintValues(context,sceneObjects[linkedHandleObjectName])                 
+                elif("handle" in physObjectTags):
+                    self.setHandleConstraintValues(context,physCandidate)
+                    linkedPhysObjectName = physObjectTags[0]+"_"+physObjectTags[1]+"_"+physObjectTags[2]+"_phys"
+                    if(linkedPhysObjectName in sceneObjects):
+                        self.setPhysConstraintValues(context,sceneObjects[linkedPhysObjectName])
+        return {'FINISHED'}
 
 #function to make a physics link springy
 class PHYPUP_OT_MakeLinksSpringy(bpy.types.Operator):
     bl_idname = "phypup.makelinksspringy"
     bl_label = "make physics object links springy"
-    bl_description = "make the links have no constraint between the handles and physics objects, so that they move like a spring (good for antennae)"
+    bl_description = "make the links springy between physics objects and handles to move like a spring (good for antennae)"
     
     def setPhysConstraintValues(self,context,physObject):
         if(physObject.rigid_body_constraint != None):
-            physObject.rigid_body_constraint.use_spring_ang_x = True
-            physObject.rigid_body_constraint.use_spring_ang_y = True
-            physObject.rigid_body_constraint.use_spring_ang_z = True
-            physObject.rigid_body_constraint.spring_stiffness_ang_x = 3000
-            physObject.rigid_body_constraint.spring_stiffness_ang_y = 3000
-            physObject.rigid_body_constraint.spring_stiffness_ang_z = 3000
-            physObject.rigid_body_constraint.spring_damping_ang_x = 3
-            physObject.rigid_body_constraint.spring_damping_ang_y = 3
-            physObject.rigid_body_constraint.spring_damping_ang_z = 3
+            physObject.rigid_body_constraint.use_spring_ang_x = False
+            physObject.rigid_body_constraint.use_spring_ang_y = False
+            physObject.rigid_body_constraint.use_spring_ang_z = False
             physObject.rigid_body_constraint.limit_lin_x_lower = -0.05
             physObject.rigid_body_constraint.limit_lin_y_lower = -0.05
             physObject.rigid_body_constraint.limit_lin_z_lower = -0.05
             physObject.rigid_body_constraint.limit_lin_x_upper = 0.05
             physObject.rigid_body_constraint.limit_lin_y_upper = 0.05
             physObject.rigid_body_constraint.limit_lin_z_upper = 0.05
-            physObject.rigid_body_constraint.use_limit_ang_x = True
-            physObject.rigid_body_constraint.use_limit_ang_y = True
-            physObject.rigid_body_constraint.use_limit_ang_z = True
+            physObject.rigid_body_constraint.use_limit_ang_x = False
+            physObject.rigid_body_constraint.use_limit_ang_y = False
+            physObject.rigid_body_constraint.use_limit_ang_z = False
             physObject.rigid_body_constraint.limit_ang_x_lower = -0.08
             physObject.rigid_body_constraint.limit_ang_y_lower = -0.08
             physObject.rigid_body_constraint.limit_ang_z_lower = -0.08
@@ -238,12 +275,24 @@ class PHYPUP_OT_MakeLinksSpringy(bpy.types.Operator):
         
     def setHandleConstraintValues(self,context,handleObject):
         if(handleObject.rigid_body_constraint != None):
-            handleObject.rigid_body_constraint.use_limit_ang_x = False
-            handleObject.rigid_body_constraint.use_limit_ang_y = False
-            handleObject.rigid_body_constraint.use_limit_ang_z = False
-            handleObject.rigid_body_constraint.use_spring_ang_x = False
-            handleObject.rigid_body_constraint.use_spring_ang_y = False
-            handleObject.rigid_body_constraint.use_spring_ang_z = False
+            handleObject.rigid_body_constraint.use_limit_ang_x = True
+            handleObject.rigid_body_constraint.use_limit_ang_y = True
+            handleObject.rigid_body_constraint.use_limit_ang_z = True
+            handleObject.rigid_body_constraint.limit_ang_x_lower = -1
+            handleObject.rigid_body_constraint.limit_ang_y_lower = -1
+            handleObject.rigid_body_constraint.limit_ang_z_lower = -1
+            handleObject.rigid_body_constraint.limit_ang_x_upper = 1
+            handleObject.rigid_body_constraint.limit_ang_y_upper = 1
+            handleObject.rigid_body_constraint.limit_ang_z_upper = 1
+            handleObject.rigid_body_constraint.use_spring_ang_x = True
+            handleObject.rigid_body_constraint.use_spring_ang_y = True
+            handleObject.rigid_body_constraint.use_spring_ang_z = True
+            handleObject.rigid_body_constraint.spring_stiffness_ang_x = 1000
+            handleObject.rigid_body_constraint.spring_stiffness_ang_y = 1000
+            handleObject.rigid_body_constraint.spring_stiffness_ang_z = 1000
+            handleObject.rigid_body_constraint.spring_damping_ang_x = 3
+            handleObject.rigid_body_constraint.spring_damping_ang_y = 3
+            handleObject.rigid_body_constraint.spring_damping_ang_z = 3
     
     def execute(self, context):
         sceneObjects = bpy.context.scene.objects
@@ -616,7 +665,8 @@ phypupClasses = (  PHYPUP_PT_PuppetPanel,
                     PHYPUP_OT_SetFrictionLow,
                     PHYPUP_OT_SetFrictionHigh,
                     PHYPUP_OT_CreateDriverArmature,
-                    PHYPUP_OT_ClearCache)
+                    PHYPUP_OT_ClearCache,
+                    PHYPUP_OT_MakeLinksStretchy)
 
 register, unregister = bpy.utils.register_classes_factory(phypupClasses)
 
