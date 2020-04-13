@@ -290,9 +290,9 @@ class PHYPUP_OT_MakeLinksSpringy(bpy.types.Operator):
             handleObject.rigid_body_constraint.spring_stiffness_ang_x = 1000
             handleObject.rigid_body_constraint.spring_stiffness_ang_y = 1000
             handleObject.rigid_body_constraint.spring_stiffness_ang_z = 1000
-            handleObject.rigid_body_constraint.spring_damping_ang_x = 3
-            handleObject.rigid_body_constraint.spring_damping_ang_y = 3
-            handleObject.rigid_body_constraint.spring_damping_ang_z = 3
+            handleObject.rigid_body_constraint.spring_damping_ang_x = 1
+            handleObject.rigid_body_constraint.spring_damping_ang_y = 1
+            handleObject.rigid_body_constraint.spring_damping_ang_z = 1
     
     def execute(self, context):
         sceneObjects = bpy.context.scene.objects
