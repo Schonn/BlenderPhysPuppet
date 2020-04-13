@@ -163,12 +163,12 @@ class PHYPUP_OT_MakeLinksSlack(bpy.types.Operator):
             physObject.rigid_body_constraint.use_limit_ang_x = False
             physObject.rigid_body_constraint.use_limit_ang_y = False
             physObject.rigid_body_constraint.use_limit_ang_z = False
-            physObject.rigid_body_constraint.limit_lin_x_lower = -0.05
-            physObject.rigid_body_constraint.limit_lin_y_lower = -0.05
-            physObject.rigid_body_constraint.limit_lin_z_lower = -0.05
-            physObject.rigid_body_constraint.limit_lin_x_upper = 0.05
-            physObject.rigid_body_constraint.limit_lin_y_upper = 0.05
-            physObject.rigid_body_constraint.limit_lin_z_upper = 0.05
+            physObject.rigid_body_constraint.limit_lin_x_lower = 0
+            physObject.rigid_body_constraint.limit_lin_y_lower = 0
+            physObject.rigid_body_constraint.limit_lin_z_lower = 0
+            physObject.rigid_body_constraint.limit_lin_x_upper = 0
+            physObject.rigid_body_constraint.limit_lin_y_upper = 0
+            physObject.rigid_body_constraint.limit_lin_z_upper = 0
         
     def setHandleConstraintValues(self,context,handleObject):
         if(handleObject.rigid_body_constraint != None):
@@ -178,12 +178,12 @@ class PHYPUP_OT_MakeLinksSlack(bpy.types.Operator):
             handleObject.rigid_body_constraint.use_spring_ang_x = True
             handleObject.rigid_body_constraint.use_spring_ang_y = True
             handleObject.rigid_body_constraint.use_spring_ang_z = True
-            handleObject.rigid_body_constraint.limit_ang_x_lower = -0.1
-            handleObject.rigid_body_constraint.limit_ang_y_lower = -0.1
-            handleObject.rigid_body_constraint.limit_ang_z_lower = -0.1
-            handleObject.rigid_body_constraint.limit_ang_x_upper = 0.1
-            handleObject.rigid_body_constraint.limit_ang_y_upper = 0.1
-            handleObject.rigid_body_constraint.limit_ang_z_upper = 0.1
+            handleObject.rigid_body_constraint.limit_ang_x_lower = -0.2
+            handleObject.rigid_body_constraint.limit_ang_y_lower = -0.2
+            handleObject.rigid_body_constraint.limit_ang_z_lower = -0.2
+            handleObject.rigid_body_constraint.limit_ang_x_upper = 0.2
+            handleObject.rigid_body_constraint.limit_ang_y_upper = 0.2
+            handleObject.rigid_body_constraint.limit_ang_z_upper = 0.2
     
     def execute(self, context):
         sceneObjects = bpy.context.scene.objects
@@ -504,12 +504,12 @@ class PHYPUP_OT_CreateArmaturePuppet(bpy.types.Operator):
                     bonePhysObject.rigid_body_constraint.use_limit_lin_x = True
                     bonePhysObject.rigid_body_constraint.use_limit_lin_y = True
                     bonePhysObject.rigid_body_constraint.use_limit_lin_z = True
-                    bonePhysObject.rigid_body_constraint.limit_lin_x_lower = -0.05
-                    bonePhysObject.rigid_body_constraint.limit_lin_y_lower = -0.05
-                    bonePhysObject.rigid_body_constraint.limit_lin_z_lower = -0.05
-                    bonePhysObject.rigid_body_constraint.limit_lin_x_upper = 0.05
-                    bonePhysObject.rigid_body_constraint.limit_lin_y_upper = 0.05
-                    bonePhysObject.rigid_body_constraint.limit_lin_z_upper = 0.05
+                    bonePhysObject.rigid_body_constraint.limit_lin_x_lower = 0
+                    bonePhysObject.rigid_body_constraint.limit_lin_y_lower = 0
+                    bonePhysObject.rigid_body_constraint.limit_lin_z_lower = 0
+                    bonePhysObject.rigid_body_constraint.limit_lin_x_upper = 0
+                    bonePhysObject.rigid_body_constraint.limit_lin_y_upper = 0
+                    bonePhysObject.rigid_body_constraint.limit_lin_z_upper = 0
                     bonePhysObject.rigid_body_constraint.object1 = bonePhysObject
                     bonePhysObject.hide_render = True
                 #set up physics control handle proxy
@@ -538,12 +538,12 @@ class PHYPUP_OT_CreateArmaturePuppet(bpy.types.Operator):
                 physHandleObject.rigid_body_constraint.use_limit_lin_x = False
                 physHandleObject.rigid_body_constraint.use_limit_lin_y = False
                 physHandleObject.rigid_body_constraint.use_limit_lin_z = False
-                physHandleObject.rigid_body_constraint.limit_ang_x_lower = -0.1
-                physHandleObject.rigid_body_constraint.limit_ang_y_lower = -0.1
-                physHandleObject.rigid_body_constraint.limit_ang_z_lower = -0.1
-                physHandleObject.rigid_body_constraint.limit_ang_x_upper = 0.1
-                physHandleObject.rigid_body_constraint.limit_ang_y_upper = 0.1
-                physHandleObject.rigid_body_constraint.limit_ang_z_upper = 0.1
+                physHandleObject.rigid_body_constraint.limit_ang_x_lower = -0.2
+                physHandleObject.rigid_body_constraint.limit_ang_y_lower = -0.2
+                physHandleObject.rigid_body_constraint.limit_ang_z_lower = -0.2
+                physHandleObject.rigid_body_constraint.limit_ang_x_upper = 0.2
+                physHandleObject.rigid_body_constraint.limit_ang_y_upper = 0.2
+                physHandleObject.rigid_body_constraint.limit_ang_z_upper = 0.2
                 physHandleObject.rigid_body_constraint.object1 = bonePhysObject
                 physHandleObject.rigid_body_constraint.object2 = physHandleObject
                 physHandleObject.hide_render = True
