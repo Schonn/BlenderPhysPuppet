@@ -476,7 +476,7 @@ class PHYPUP_OT_CreateArmaturePuppet(bpy.types.Operator):
                 bonePhysObject.location = [0,-targetBone.length,0]
                 bpy.ops.object.editmode_toggle()
                 bpy.ops.transform.rotate(value=1.5708, orient_axis='X', orient_type='LOCAL', constraint_axis=(True, False, False))
-                bpy.ops.mesh.extrude_region_move(MESH_OT_extrude_region={"use_normal_flip":False, "mirror":False}, TRANSFORM_OT_translate={"value":(0,0,targetBone.length), "orient_type":'NORMAL', "constraint_axis":(False, False, True)})
+                bpy.ops.mesh.extrude_region_move(MESH_OT_extrude_region={"use_normal_flip":False, "mirror":False}, TRANSFORM_OT_translate={"value":(0,0,-targetBone.length), "orient_type":'NORMAL', "constraint_axis":(False, False, True)})
                 bpy.ops.object.editmode_toggle()
                 #switch the parenting so that the bone follows the physics object
                 bpy.ops.object.parent_clear(type='CLEAR_KEEP_TRANSFORM')
@@ -623,7 +623,7 @@ class PHYPUP_OT_CreateDriverArmature(bpy.types.Operator):
                     targetBone.constraints.remove(constraintToRemove)
             bpy.ops.object.posemode_toggle()   
             bpy.ops.object.select_all(action='DESELECT')
-            bpy.ops.object.empty_add(type='PLAIN_AXES', view_align=False, location=driverArmature.location)
+            bpy.ops.object.empty_add(type='PLAIN_AXES', location=driverArmature.location)
             driverEmptyObject = bpy.context.selected_objects[0]
             #add driver empty to the PHYPUP collection
             self.assignToCollection(context,"PHYPUPDriverArmatures_" + armatureObject.name,driverEmptyObject)
