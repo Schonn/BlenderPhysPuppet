@@ -36,10 +36,13 @@ class PHYPUP_PT_PuppetPanel(bpy.types.Panel):
     bl_label = 'Physics Puppet'
     bl_context = 'objectmode'
     bl_category = 'Puppet Physics'
+    bpy.types.Scene.PHYPUPRigFix = bpy.props.BoolProperty(name="Apply Scale & Clear Underscores",description="Apply armature scale and remove underscores from bone names for rigs that have these features",default=False)
 
     def draw(self, context):
+        self.layout.prop(context.scene,"PHYPUPRigFix")
         self.layout.operator('phypup.makepuppet', text ='Create Puppet From Armature')
         self.layout.operator('phypup.makedriverarmature', text ='Create Driver Armature')
+        
         
 #panel class for rigid body related items in object mode
 class PHYPUP_PT_RigidBodyPanel(bpy.types.Panel):
@@ -49,7 +52,7 @@ class PHYPUP_PT_RigidBodyPanel(bpy.types.Panel):
     bl_context = 'objectmode'
     bl_category = 'Puppet Physics'
     bpy.types.Scene.PHYPUPStretchAmount = bpy.props.FloatProperty(name="Stretch Distance",description="Amount of stretch to allow when making links stretchy",default=1,min=0,max=1000)
-
+   
     def draw(self, context):
         self.layout.operator('phypup.clearcache', text ='Force Clear Cache')
         self.layout.operator('phypup.makenarrower', text ='Make Narrower')
@@ -436,7 +439,14 @@ class PHYPUP_OT_CreateArmaturePuppet(bpy.types.Operator):
         sceneObjects = bpy.context.scene.objects
         #pick up armature from first in selection, make sure it is armature
         armatureObject = bpy.context.selected_objects[0]
+        #remove underscores from armature name, physpup uses underscores
+        armatureObject.name = armatureObject.name.replace("_","")
         if armatureObject.type == 'ARMATURE':
+            #apply scale and remove underscores in a rig that has these features
+            if(context.scene.PHYPUPRigFix == True):
+                bpy.ops.object.transform_apply(location=False, rotation=False, scale=True)
+                for targetBone in armatureObject.data.bones:
+                    targetBone.name = targetBone.name.replace("_","")
             #create a collection
             self.setupCollection(context,"PHYPUPObjects_" + armatureObject.name)
             #create an initial rigid body to make sure that the rigid body world exists
