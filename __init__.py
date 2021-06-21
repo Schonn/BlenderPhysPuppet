@@ -1,4 +1,4 @@
-# Physics Puppet Blender Addon
+# Reciprocal Rigid Rig Blender Addon
 # Copyright (C) 2021 Pierre
 #
 # This program is free software: you can redistribute it and/or modify it under
@@ -176,8 +176,11 @@ class RECRIG_OT_AddToRig(bpy.types.Operator):
                     bpy.ops.object.duplicate()
                     controlArmature = bpy.context.selected_objects[0]
                     controlArmature.name = "recrig_" + armatureObject.name + "_controlrig"
-                    #set up passive rigid bodies for control rig
+                    #clear all constraints
                     bpy.ops.object.posemode_toggle()
+                    bpy.ops.pose.select_all(action='SELECT')
+                    bpy.ops.pose.constraints_clear()
+                    #set up passive rigid bodies for control rig
                     for targetBone in bpy.context.selected_pose_bones:
                         bpy.ops.object.posemode_toggle()
                         bpy.ops.mesh.primitive_plane_add(size = targetBone.length*0.1)
