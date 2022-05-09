@@ -36,9 +36,11 @@ class RECRIG_PT_SetupPanel(bpy.types.Panel):
     bl_context = 'objectmode'
     bl_category = 'Reciprocal Rigid Rig'
     bpy.types.Scene.RECRIGFix = bpy.props.BoolProperty(name="Apply Scale & Clear Underscores",description="Apply armature scale and remove underscores from bone names for rigs that have these features",default=False)
+    bpy.types.Scene.RECRIGLinearStiffness = bpy.props.IntProperty(name="Control Rig Linear Spring Stiffness",description="How strongly the positions of the rigid bodies will follow the control armature",min=10,max=4000,default=1000)
 
     def draw(self, context):
         self.layout.prop(context.scene,"RECRIGFix")
+        self.layout.prop(context.scene,"RECRIGLinearStiffness")
         self.layout.operator('recrig.addtorig', text ='Add Effect To Selected Armatures')
         self.layout.operator('recrig.removefromrig', text ='Remove Effect From Selected')
      
@@ -163,7 +165,7 @@ class RECRIG_OT_AddToRig(bpy.types.Operator):
                     bpy.ops.rigidbody.object_add()
                     bpy.ops.object.delete(use_global=False, confirm=False)
                     #configure the rigid body world
-                    bpy.context.scene.rigidbody_world.time_scale = 1.3
+                    bpy.context.scene.rigidbody_world.time_scale = 1
                     bpy.context.scene.rigidbody_world.substeps_per_frame = 10
                     bpy.context.scene.rigidbody_world.solver_iterations = 20
                     bpy.context.scene.gravity = [0,0,-50]
@@ -245,7 +247,7 @@ class RECRIG_OT_AddToRig(bpy.types.Operator):
                         
                         #create vertex group to bring bone to bottom of mesh and keep origin in place
                         bonePosVertGroup = bonePhysObject.vertex_groups.new(name="bonePos")
-                        bonePosVertGroup.add([4,5,6,7],1,'REPLACE')
+                        bonePosVertGroup.add([0,1,2,3],1,'REPLACE')
                         
                         bpy.ops.object.origin_set(type='ORIGIN_GEOMETRY',center='MEDIAN')
                         bonePhysObject.location = [0,-targetBone.length/2,0]
@@ -279,6 +281,8 @@ class RECRIG_OT_AddToRig(bpy.types.Operator):
                     #list unparented bones to report to user
                     unparentedBones = []
                     #fill in all physics constraints from collection
+                    #make at least one physics object be location attached to the handle
+                    needsLocationAnchor = True
                     for potentialPhysObject in bpy.data.collections[recrigCollectionName].objects:
                         if("recrig_" in potentialPhysObject.name and armatureObject.name in potentialPhysObject.name):
                             #if it is the physics object, attach it to the associated handle
@@ -298,32 +302,44 @@ class RECRIG_OT_AddToRig(bpy.types.Operator):
                                 physRigidConstraint.disable_collisions = True
                                 physRigidConstraint.enabled = True
                                 #hard limits
-                                physRigidConstraint.use_limit_lin_x = False
-                                physRigidConstraint.use_limit_lin_y = False
-                                physRigidConstraint.use_limit_lin_z = False
+                                physRigidConstraint.use_limit_lin_x = needsLocationAnchor
+                                physRigidConstraint.use_limit_lin_y = needsLocationAnchor
+                                physRigidConstraint.use_limit_lin_z = needsLocationAnchor
+                                if(needsLocationAnchor == True):
+                                    needsLocationAnchor = False
+                                    
+                                physRigidConstraint.limit_lin_x_lower = -0.2
+                                physRigidConstraint.limit_lin_y_lower = -0.2
+                                physRigidConstraint.limit_lin_z_lower = -0.2
+                                physRigidConstraint.limit_lin_x_upper = 0.2
+                                physRigidConstraint.limit_lin_y_upper = 0.2
+                                physRigidConstraint.limit_lin_z_upper = 0.2
                                 
                                 physRigidConstraint.use_limit_ang_x = True
                                 physRigidConstraint.use_limit_ang_y = True
                                 physRigidConstraint.use_limit_ang_z = True
-                                physRigidConstraint.limit_ang_x_lower = -0.2
-                                physRigidConstraint.limit_ang_y_lower = -0.2
-                                physRigidConstraint.limit_ang_z_lower = -0.2
-                                physRigidConstraint.limit_ang_x_upper = 0.2
-                                physRigidConstraint.limit_ang_y_upper = 0.2
-                                physRigidConstraint.limit_ang_z_upper = 0.2
+                                physRigidConstraint.limit_ang_x_lower = -0.1
+                                physRigidConstraint.limit_ang_y_lower = -0.1
+                                physRigidConstraint.limit_ang_z_lower = -0.1
+                                physRigidConstraint.limit_ang_x_upper = 0.1
+                                physRigidConstraint.limit_ang_y_upper = 0.1
+                                physRigidConstraint.limit_ang_z_upper = 0.1
                                 
                                 physRigidConstraint.use_spring_ang_x = True
                                 physRigidConstraint.use_spring_ang_y = True
                                 physRigidConstraint.use_spring_ang_z = True
-                                physRigidConstraint.use_spring_x = True
-                                physRigidConstraint.use_spring_y = True
-                                physRigidConstraint.use_spring_z = True
+                                
+                                physRigidConstraint.use_spring_x = False
+                                physRigidConstraint.use_spring_y = False
+                                physRigidConstraint.use_spring_z = False
+                                
+                                    
                                 physRigidConstraint.spring_stiffness_ang_x = 700
                                 physRigidConstraint.spring_stiffness_ang_y = 700
                                 physRigidConstraint.spring_stiffness_ang_z = 700
-                                physRigidConstraint.spring_stiffness_x = 100
-                                physRigidConstraint.spring_stiffness_y = 100
-                                physRigidConstraint.spring_stiffness_z = 100
+                                physRigidConstraint.spring_stiffness_x = 900
+                                physRigidConstraint.spring_stiffness_y = 900
+                                physRigidConstraint.spring_stiffness_z = 900
                                 physRigidConstraint.spring_damping_x = 10
                                 physRigidConstraint.spring_damping_y = 10
                                 physRigidConstraint.spring_damping_z = 10
@@ -373,9 +389,9 @@ class RECRIG_OT_AddToRig(bpy.types.Operator):
                                         handleRigidConstraint.spring_stiffness_ang_x = 200
                                         handleRigidConstraint.spring_stiffness_ang_y = 200
                                         handleRigidConstraint.spring_stiffness_ang_z = 200
-                                        handleRigidConstraint.spring_stiffness_x = 1000
-                                        handleRigidConstraint.spring_stiffness_y = 1000
-                                        handleRigidConstraint.spring_stiffness_z = 1000
+                                        handleRigidConstraint.spring_stiffness_x = context.scene.RECRIGLinearStiffness
+                                        handleRigidConstraint.spring_stiffness_y = context.scene.RECRIGLinearStiffness
+                                        handleRigidConstraint.spring_stiffness_z = context.scene.RECRIGLinearStiffness
                                         handleRigidConstraint.spring_damping_x = 30
                                         handleRigidConstraint.spring_damping_y = 30
                                         handleRigidConstraint.spring_damping_z = 30
