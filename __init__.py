@@ -156,9 +156,9 @@ class PHYSPUP_OT_MakePuppet(bpy.types.Operator):
                                 puppetConstraintPoint.rigid_body_constraint.spring_stiffness_x = 3000
                                 puppetConstraintPoint.rigid_body_constraint.spring_stiffness_y = 3000
                                 puppetConstraintPoint.rigid_body_constraint.spring_stiffness_z = 3000
-                                puppetConstraintPoint.rigid_body_constraint.spring_damping_x = 50
-                                puppetConstraintPoint.rigid_body_constraint.spring_damping_y = 50
-                                puppetConstraintPoint.rigid_body_constraint.spring_damping_z = 50
+                                puppetConstraintPoint.rigid_body_constraint.spring_damping_x = 100
+                                puppetConstraintPoint.rigid_body_constraint.spring_damping_y = 100
+                                puppetConstraintPoint.rigid_body_constraint.spring_damping_z = 100
                         #scale collider with constraint empty attached
                         puppetCollider.scale = colliderScale
                         #add rigid body constraints
@@ -168,8 +168,8 @@ class PHYSPUP_OT_MakePuppet(bpy.types.Operator):
                         controlCollider.rigid_body_constraint.use_limit_ang_x = True
                         controlCollider.rigid_body_constraint.use_limit_ang_y = True
                         controlCollider.rigid_body_constraint.use_limit_ang_z = True
-                        minAngle = math.radians(-10)
-                        maxAngle = math.radians(10)
+                        minAngle = math.radians(-3)
+                        maxAngle = math.radians(3)
                         controlCollider.rigid_body_constraint.limit_ang_x_lower = minAngle
                         controlCollider.rigid_body_constraint.limit_ang_y_lower = minAngle
                         controlCollider.rigid_body_constraint.limit_ang_z_lower = minAngle
@@ -182,9 +182,9 @@ class PHYSPUP_OT_MakePuppet(bpy.types.Operator):
                         controlCollider.rigid_body_constraint.spring_stiffness_ang_x = 3000
                         controlCollider.rigid_body_constraint.spring_stiffness_ang_y = 3000
                         controlCollider.rigid_body_constraint.spring_stiffness_ang_z = 3000
-                        controlCollider.rigid_body_constraint.spring_damping_ang_x = 50
-                        controlCollider.rigid_body_constraint.spring_damping_ang_y = 50
-                        controlCollider.rigid_body_constraint.spring_damping_ang_z = 50
+                        controlCollider.rigid_body_constraint.spring_damping_ang_x = 100
+                        controlCollider.rigid_body_constraint.spring_damping_ang_y = 100
+                        controlCollider.rigid_body_constraint.spring_damping_ang_z = 100
                         controlCollider.rigid_body_constraint.object1 = puppetCollider
                         controlCollider.rigid_body_constraint.object2 = controlCollider
                         
