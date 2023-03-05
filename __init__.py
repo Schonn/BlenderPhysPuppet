@@ -189,31 +189,33 @@ class PHYSPUP_OT_MakePuppet(bpy.types.Operator):
                         controlCollider.rigid_body_constraint.object2 = controlCollider
                         
                 #iterate selected bones in puppet armature to finish constraint connections
-                for selectedBone in puppetArmature.data.bones:
-                    puppetColliderName = "physpup_" + puppetArmature.name + "_" + selectedBone.name + "_phys"
-                    puppetConstraintPointName = "physpup_" + puppetArmature.name + "_" + selectedBone.name + "_constraint"
+                for selectedConstraintBone in puppetArmature.data.bones:
+                    puppetColliderName = "physpup_" + puppetArmature.name + "_" + selectedConstraintBone.name + "_phys"
+                    puppetConstraintPointName = "physpup_" + puppetArmature.name + "_" + selectedConstraintBone.name + "_constraint"
                     #if a constraint object has been created, the bone can be position constrained
                     if((puppetConstraintPointName) in bpy.data.objects):
                         puppetConstraintPoint = bpy.data.objects[puppetConstraintPointName]
                         puppetCollider = bpy.data.objects[puppetColliderName]
-                        puppetParentCollider = bpy.data.objects["physpup_" + puppetArmature.name + "_" + selectedBone.parent.name + "_phys"]
+                        puppetParentCollider = bpy.data.objects["physpup_" + puppetArmature.name + "_" + selectedConstraintBone.parent.name + "_phys"]
                         puppetConstraintPoint.rigid_body_constraint.object1 = puppetCollider
                         puppetConstraintPoint.rigid_body_constraint.object2 = puppetParentCollider
                     #if a puppet collider exists regardless of constraint point, the bone can be constrainted to it
                     if((puppetColliderName) in bpy.data.objects):
                         puppetCollider = bpy.data.objects[puppetColliderName]
-                        rotateConstraint = puppetArmature.pose.bones[selectedBone.name].constraints.new(type='COPY_ROTATION')
+                        rotateConstraint = puppetArmature.pose.bones[selectedConstraintBone.name].constraints.new(type='COPY_ROTATION')
                         rotateConstraint.target = puppetCollider
-                        positionConstraint = puppetArmature.pose.bones[selectedBone.name].constraints.new(type='COPY_LOCATION')
+                        positionConstraint = puppetArmature.pose.bones[selectedConstraintBone.name].constraints.new(type='COPY_LOCATION')
                         positionConstraint.target = puppetCollider
                         positionConstraint.subtarget = "PHYPUP_bonetransform"
+                #final iteration to split bones
+                for selectedDisconnectBone in puppetArmature.data.bones:
                     #make bone disconnected
                     #ops appears to be the only way to do this
                     bpy.ops.object.select_all(action='DESELECT')
                     puppetArmature.select_set(True)
                     bpy.context.view_layer.objects.active = puppetArmature
                     bpy.ops.object.mode_set(mode='EDIT', toggle=False)
-                    puppetArmature.data.edit_bones[selectedBone.name].use_connect = False
+                    puppetArmature.data.edit_bones[selectedDisconnectBone.name].use_connect = False
                     bpy.ops.object.mode_set(mode='OBJECT', toggle=False)
 
         return {'FINISHED'}
