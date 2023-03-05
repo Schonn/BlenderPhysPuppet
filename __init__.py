@@ -94,6 +94,7 @@ class PHYSPUP_OT_MakePuppet(bpy.types.Operator):
                 controlArmature = bpy.data.objects.new("physpup_" + puppetArmature.name + "_control",puppetArmature.data)
                 physPupCollection.objects.link(controlArmature)
                 controlArmature.location = puppetArmature.location + mathutils.Vector([0,5,0])
+                controlArmature.show_in_front = True
                 #iterate selected bones in puppet armature to create colliders
                 for selectedBone in puppetArmature.data.bones:
                     if(selectedBone.select == True):
@@ -104,6 +105,8 @@ class PHYSPUP_OT_MakePuppet(bpy.types.Operator):
                         physPupCollection.objects.link(puppetCollider)
                         puppetCollider.matrix_world = puppetArmature.matrix_world @ puppetArmature.pose.bones[selectedBone.name].matrix
                         puppetCollider.location = puppetCollider.matrix_world @ mathutils.Vector([0,selectedBone.length*0.5,0])
+                        puppetCollider.display_type = 'WIRE'
+                        puppetCollider.hide_render = True
                         #set weights for bone transform copy if not existing
                         if(("PHYPUP_bonetransform" in puppetCollider.vertex_groups) == False):
                             transformVertGroup = puppetCollider.vertex_groups.new(name="PHYPUP_bonetransform")
@@ -118,6 +121,8 @@ class PHYSPUP_OT_MakePuppet(bpy.types.Operator):
                         controlCollider.location = [0,-selectedBone.length*0.5,0]
                         controlCollider.rotation_euler = [0,0,0]
                         controlCollider.scale = colliderScale
+                        controlCollider.display_type = 'WIRE'
+                        controlCollider.hide_render = True
                         
                         #set up rigid bodies
                         rigidWorldCollection.objects.link(puppetCollider)
