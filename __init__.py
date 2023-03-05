@@ -208,15 +208,14 @@ class PHYSPUP_OT_MakePuppet(bpy.types.Operator):
                         positionConstraint.target = puppetCollider
                         positionConstraint.subtarget = "PHYPUP_bonetransform"
                 #final iteration to split bones
+                #ops appears to be the only way to do this
+                bpy.ops.object.select_all(action='DESELECT')
+                puppetArmature.select_set(True)
+                bpy.context.view_layer.objects.active = puppetArmature
+                bpy.ops.object.mode_set(mode='EDIT', toggle=False)
                 for selectedDisconnectBone in puppetArmature.data.bones:
-                    #make bone disconnected
-                    #ops appears to be the only way to do this
-                    bpy.ops.object.select_all(action='DESELECT')
-                    puppetArmature.select_set(True)
-                    bpy.context.view_layer.objects.active = puppetArmature
-                    bpy.ops.object.mode_set(mode='EDIT', toggle=False)
                     puppetArmature.data.edit_bones[selectedDisconnectBone.name].use_connect = False
-                    bpy.ops.object.mode_set(mode='OBJECT', toggle=False)
+                bpy.ops.object.mode_set(mode='OBJECT', toggle=False)
 
         return {'FINISHED'}
    
