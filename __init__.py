@@ -148,18 +148,12 @@ class PHYSPUP_OT_MakePuppet(bpy.types.Operator):
                                 #determine minimums and maximums from bone name
                                 moveLowerLimit = -0.1
                                 moveUpperLimit = 0.1
-                                #keep arms, legs and head strong
-                                if(("foot" in selectedBone.name) 
-                                or ("leg" in selectedBone.name) 
-                                or ("calf" in selectedBone.name) 
-                                or ("thigh" in selectedBone.name) 
-                                or ("hip" in selectedBone.name)
-                                or ("clav" in selectedBone.name)
-                                or ("shoulder" in selectedBone.name)
-                                or ("arm" in selectedBone.name)
-                                or ("hand" in selectedBone.name)
-                                or ("head" in selectedBone.name)
-                                or ("neck" in selectedBone.name)):
+                                #if a bone is labeled to be strong, keep it strong
+                                if(("strong" in selectedBone.name) 
+                                or ("rigid" in selectedBone.name) 
+                                or ("tight" in selectedBone.name) 
+                                or ("tough" in selectedBone.name) 
+                                or ("welded" in selectedBone.name)):
                                     moveLowerLimit = 0
                                     moveUpperLimit = 0
                                 puppetConstraintPoint.rigid_body_constraint.type = 'GENERIC_SPRING'
@@ -197,9 +191,11 @@ class PHYSPUP_OT_MakePuppet(bpy.types.Operator):
                         #determine minimums and maximums from bone name
                         rotateLowerLimit = math.radians(-3)
                         rotateUpperLimit = math.radians(3)
-                        #ears and tails can be loose
-                        if(("ear" in selectedBone.name) 
-                        or ("tail" in selectedBone.name)):
+                        #make sure things that are meant to be loose, stay loose
+                        if(("loose" in selectedBone.name) 
+                        or ("floppy" in selectedBone.name)
+                        or ("weak" in selectedBone.name)
+                        or ("lazy" in selectedBone.name)):
                             rotateLowerLimit = math.radians(-90)
                             rotateUpperLimit = math.radians(90)
                             stiffnessAngle = 1000
