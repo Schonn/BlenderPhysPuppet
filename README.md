@@ -53,6 +53,20 @@ Retrograded for Blender 2.7.9 !
 
 ----
 
+### To add constraint armatures to control armatures for nonlinear-style animation:
+
+-Generate the physics puppet for your chosen armature
+
+-Select the bones you wish to create a constraint armature for from within the physics puppet armature
+
+-Return to object mode and click 'Constraint Armature From Selected Bones'
+
+-You may then use the generated armature and influence control empty as an 'animation layer' for the physics puppet control armature
+
+-You may wish to generate multiple constraint armatures for one control armature, or chain constraint armatures together to form branching or pseudo-state-machine like influences
+
+----
+
 ### How to animate with physics puppet:
 
 -The original armature will be controlled by the duplicate armature using rigid body constraints.
