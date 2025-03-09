@@ -1,7 +1,7 @@
 # BlenderPhysPuppet
 ---
 
-Updated for Blender 3.4.1
+Retrograded for Blender 2.7.9 !
 
 ---
 
@@ -15,7 +15,7 @@ Updated for Blender 3.4.1
 
 -Install zip from Add-Ons section of Blender preferences window
 
--Make sure add-on is switched on
+-Make sure add-on is switched on and user preferences are saved
 
 ----
 
@@ -67,15 +67,15 @@ Updated for Blender 3.4.1
 
 -Once you have a motion you want to test, move the playhead to the end of your current animation progress
 
--Click on 'Scene Properties > Rigid Body World > Cache > Calculate to Frame'
+-Click on 'Scene Properties > Rigid Body Cache > Calculate to Frame'
 
--Click on 'Scene Properties > Rigid Body World > Cache > Current Cache to Bake' to make sure the preview is preserved. You may have strange results if you do not click this!
+-Click on 'Scene Properties > Rigid Body Cache > Current Cache to Bake' to make sure the preview is preserved. You may have strange results if you do not click this!
 
 -Scrub through the timeline to preview the result
 
 -Adjust the animation of your control rig based on what you have seen in the resulting physics sim 
 
--Click on 'Scene Properties > Rigid Body World > Cache > Delete All Bakes' so that you may recalculate to frame and bake cache again to preview your new animation changes
+-Click on 'Scene Properties > Rigid Body Cache > Delete All Bakes' so that you may recalculate to frame and bake cache again to preview your new animation changes
 
 -Repeat this process until you are satisfied with your animation
 
