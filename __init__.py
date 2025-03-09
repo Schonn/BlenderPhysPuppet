@@ -39,6 +39,7 @@ class PHYSPUP_PT_SetupPanel(bpy.types.Panel):
 
     def draw(self, context):
         self.layout.operator("physpup.makepuppet", text ="Make Puppet From Armature")
+        self.layout.operator("physpup.makeconstraintrig", text ="Constraint Armature From Selected Bones")
 
 #setup operator
 class PHYSPUP_OT_MakePuppet(bpy.types.Operator):
@@ -210,15 +211,55 @@ class PHYSPUP_OT_MakePuppet(bpy.types.Operator):
                 bpy.ops.object.mode_set(mode='OBJECT', toggle=False)
 
         return {'FINISHED'}
+    
+class PHYSPUP_OT_MakeConstraintRig(bpy.types.Operator):
+    bl_idname = "physpup.makeconstraintrig"
+    bl_label = "Make constraint rig for selected bones"
+    bl_description = "Use selected bones in selected armatures to create constraint rigs with controllable influence"
+    
+    def execute(self, context):
+        #iterate all selected objects and find armatures
+        originalSelectedObjects = bpy.context.selected_objects
+        for controlArmature in originalSelectedObjects:
+            if(controlArmature.type == 'ARMATURE'):
+                #create duplicate control armature
+                constraintArmature = bpy.data.objects.new(controlArmature.name + "_constraint",controlArmature.data)
+                bpy.context.scene.objects.link(constraintArmature)
+                constraintArmature.location = controlArmature.location + mathutils.Vector([0,5,0])
+                constraintArmature.show_x_ray = True
+                #make distance control empty 
+                distanceControlEmpty = bpy.data.objects.new("driverinfluence_" + constraintArmature.name,None)
+                bpy.context.scene.objects.link(distanceControlEmpty)
+                distanceControlEmpty.location = constraintArmature.location
+                #iterate selected bones in constraint armature to create constraints
+                for selectedBone in controlArmature.data.bones:
+                    if(selectedBone.select == True):
+                        print(selectedBone.name + " is selected in " + controlArmature.name)
+                        boneTransformConstraint = controlArmature.pose.bones[selectedBone.name].constraints.new(type='COPY_TRANSFORMS')
+                        boneTransformConstraint.name = "transformconstrain_physpup"
+                        boneTransformConstraint.target = constraintArmature
+                        boneTransformConstraint.subtarget = selectedBone.name
+                        boneTransformConstraint.owner_space = 'LOCAL'
+                        boneTransformConstraint.target_space = 'LOCAL'
+                        constraintDriver = boneTransformConstraint.driver_add('influence')
+                        constraintDriver.driver.type = 'AVERAGE'
+                        constraintDriverVariable = constraintDriver.driver.variables.new()
+                        constraintDriverVariable.name = "physpup_driveremptydistance"
+                        constraintDriverVariable.type = 'LOC_DIFF'
+                        constraintDriverVariable.targets[0].id = distanceControlEmpty
+                        constraintDriverVariable.targets[1].id = constraintArmature
+        return {'FINISHED'}
    
 #register and unregister panels and operators
 def register():
     bpy.utils.register_class(PHYSPUP_PT_SetupPanel)
     bpy.utils.register_class(PHYSPUP_OT_MakePuppet)
+    bpy.utils.register_class(PHYSPUP_OT_MakeConstraintRig)
     
 def unregister():
     bpy.utils.unregister_class(PHYSPUP_PT_SetupPanel)
     bpy.utils.unregister_class(PHYSPUP_OT_MakePuppet)
+    bpy.utils.unregister_class(PHYSPUP_OT_MakeConstraintRig)
 
 if __name__ == '__main__':
     register()
