@@ -51,8 +51,9 @@ class PHYSPUP_OT_MakePuppet(bpy.types.Operator):
         #make sure rigid body world exists
         if(bpy.context.scene.rigidbody_world == None):
             bpy.ops.rigidbody.world_add()
-        #adjust gravity
+        #adjust gravity and simulation accuracy
         bpy.context.scene.rigidbody_world.effector_weights.gravity = 10
+        bpy.context.scene.rigidbody_world.steps_per_second = 100
         #make sure collision mesh data exists
         collisionMesh = None
         #use existing collision mesh data if available, otherwise generate new
@@ -117,6 +118,7 @@ class PHYSPUP_OT_MakePuppet(bpy.types.Operator):
                         bpy.context.scene.objects.active = puppetCollider
                         bpy.ops.rigidbody.object_add(type='ACTIVE')
                         puppetCollider.rigid_body.friction = 1000
+                        puppetCollider.rigid_body.mass = 10
                         
                         #create puppet constraint empty if bone has a selected parent
                         puppetConstraintPoint = None
