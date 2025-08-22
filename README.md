@@ -1,7 +1,7 @@
 # BlenderPhysPuppet
 ---
 
-Retrograded for Blender 2.7.9 !
+Retrograded for Blender 2.7.9 for use on older hardware and due to the fast opengl internal renderer in this legacy Blender version !
 
 ---
 
