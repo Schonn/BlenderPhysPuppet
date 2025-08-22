@@ -22,7 +22,7 @@ import math
 bl_info = {
     "name": "Physics Puppet",
     "author": "Pierre",
-    "version": (0, 0, 5),
+    "version": (0, 0, 6),
     "blender": (2, 7, 9),
     "description": "Turn armatures into active ragdoll puppets",
     "category": "Animation"
@@ -134,17 +134,8 @@ class PHYSPUP_OT_MakePuppet(bpy.types.Operator):
                                 bpy.context.scene.objects.active = puppetConstraintPoint
                                 #add rigid body constraints
                                 bpy.ops.rigidbody.constraint_add()
-                                #determine minimums and maximums from bone name
-                                moveLowerLimit = -0.01
-                                moveUpperLimit = 0.01
-                                #if a bone is labeled to be strong, keep it strong
-                                if(("strong" in selectedBone.name) 
-                                or ("rigid" in selectedBone.name) 
-                                or ("tight" in selectedBone.name) 
-                                or ("tough" in selectedBone.name) 
-                                or ("welded" in selectedBone.name)):
-                                    moveLowerLimit = 0
-                                    moveUpperLimit = 0
+                                moveLowerLimit = 0
+                                moveUpperLimit = 0
                                 puppetConstraintPoint.rigid_body_constraint.type = 'GENERIC'
                                 puppetConstraintPoint.rigid_body_constraint.use_limit_lin_x = True
                                 puppetConstraintPoint.rigid_body_constraint.use_limit_lin_y = True
@@ -165,8 +156,8 @@ class PHYSPUP_OT_MakePuppet(bpy.types.Operator):
                         controlCollider.rigid_body_constraint.use_limit_ang_y = True
                         controlCollider.rigid_body_constraint.use_limit_ang_z = True
                         #determine minimums and maximums from bone name
-                        rotateLowerLimit = math.radians(-1)
-                        rotateUpperLimit = math.radians(1)
+                        rotateLowerLimit = math.radians(0)
+                        rotateUpperLimit = math.radians(0)
                         #make sure things that are meant to be loose, stay loose
                         if(("loose" in selectedBone.name) 
                         or ("floppy" in selectedBone.name)
