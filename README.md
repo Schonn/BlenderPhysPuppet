@@ -27,13 +27,7 @@ Retrograded for Blender 2.7.9 for use on older hardware and due to the fast open
 
 ### To prepare an armature for one-click physics puppet:
 
--Name your bones according to how floppy or rigid they should be in the physics sim
-
-  -bones with 'strong','rigid','tight','tough' or 'welded' in the bone name will follow the control armature rotation tightly and won't translate much. May be useful for arms, legs, hands or other things that require precise, strong movement.
-  
-  -bones with 'loose','floppy','weak' or 'lazy' will have a fair bit of give and appear floppy. May be useful for antennae or hair
-  
-  -bones without any of the above keywords will twist and shift very slightly, but mostly follow the control armature
+  -Name bones with 'loose','floppy','weak' or 'lazy' in the bone name for them to have a fair bit of 'give' and appear floppy. May be useful for antennae or hair
   
 ----
 
