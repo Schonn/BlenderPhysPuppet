@@ -22,7 +22,7 @@ import math
 bl_info = {
     "name": "Physics Puppet",
     "author": "Pierre",
-    "version": (0, 0, 6),
+    "version": (0, 0, 7),
     "blender": (2, 7, 9),
     "description": "Turn armatures into active ragdoll puppets",
     "category": "Animation"
@@ -52,7 +52,7 @@ class PHYSPUP_OT_MakePuppet(bpy.types.Operator):
         if(bpy.context.scene.rigidbody_world == None):
             bpy.ops.rigidbody.world_add()
         #adjust gravity and simulation accuracy
-        bpy.context.scene.rigidbody_world.effector_weights.gravity = 10
+        bpy.context.scene.rigidbody_world.effector_weights.gravity = 1
         bpy.context.scene.rigidbody_world.steps_per_second = 100
         #make sure collision mesh data exists
         collisionMesh = None
@@ -86,7 +86,7 @@ class PHYSPUP_OT_MakePuppet(bpy.types.Operator):
                 for selectedBone in puppetArmature.data.bones:
                     if(selectedBone.select == True):
                         #get collider scales
-                        colliderScale = [0.2,selectedBone.length*0.3,0.2]
+                        colliderScale = [selectedBone.length*0.2,selectedBone.length*0.3,selectedBone.length*0.2]
                         #create puppet bone collider
                         puppetCollider = bpy.data.objects.new("physpup_" + puppetArmature.name + "_" + selectedBone.name + "_phys",collisionMesh)
                         bpy.context.scene.objects.link(puppetCollider)
@@ -117,8 +117,10 @@ class PHYSPUP_OT_MakePuppet(bpy.types.Operator):
                         controlCollider.rigid_body.kinematic = True
                         bpy.context.scene.objects.active = puppetCollider
                         bpy.ops.rigidbody.object_add(type='ACTIVE')
-                        puppetCollider.rigid_body.friction = 1000
-                        puppetCollider.rigid_body.mass = 10
+                        puppetCollider.rigid_body.friction = 0.5
+                        puppetCollider.rigid_body.mass = selectedBone.length * 10
+                        puppetCollider.rigid_body.linear_damping = 0
+                        puppetCollider.rigid_body.angular_damping = 0
                         
                         #create puppet constraint empty if bone has a selected parent
                         puppetConstraintPoint = None
@@ -134,6 +136,7 @@ class PHYSPUP_OT_MakePuppet(bpy.types.Operator):
                                 bpy.context.scene.objects.active = puppetConstraintPoint
                                 #add rigid body constraints
                                 bpy.ops.rigidbody.constraint_add()
+                                #determine minimums and maximums from bone name
                                 moveLowerLimit = 0
                                 moveUpperLimit = 0
                                 puppetConstraintPoint.rigid_body_constraint.type = 'GENERIC'
